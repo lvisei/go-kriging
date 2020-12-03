@@ -5,6 +5,7 @@
 package ordinary
 
 import (
+	"github.com/paulmach/orb"
 	"image"
 	"image/color"
 	"math"
@@ -13,19 +14,19 @@ import (
 
 // Variogram ordinary kriging variogram
 type Variogram struct {
-	T []float64
-	X []float64
-	Y []float64
+	T []float64 `json:"-"`
+	X []float64 `json:"-"`
+	Y []float64 `json:"-"`
 
-	nugget float64
-	range_ float64
-	sill   float64
-	A      float64
-	n      int
+	nugget float64 `json:"nugget"`
+	range_ float64 `json:"range"`
+	sill   float64 `json:"sill"`
+	A      float64 `json:"A"`
+	n      int     `json:"n"`
 
-	K     []float64
-	M     []float64
-	model variogramModel
+	K     []float64      `json:"K"`
+	M     []float64      `json:"M"`
+	model variogramModel `json:"-"`
 }
 
 type variogramModel func(float64, float64, float64, float64, float64) float64
@@ -99,6 +100,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	sort.Sort(distance)
 	variogram.range_ = distance[(n*n-n)/2-1][0]
 
+	// TODO: Go
 	// Bin lag distance
 	var lags int
 	if ((n*n - n) / 2) > 30 {
@@ -247,31 +249,31 @@ func (variogram *Variogram) Variance(x, y float64) {
 }
 
 // Grid gridded matrices or contour paths
-func (variogram *Variogram) Grid(polygons [][][2]float64, width float64) GridMatrices {
-	n := len(polygons)
+func (variogram *Variogram) Grid(polygon orb.Polygon, width float64) GridMatrices {
+	n := len(polygon)
 	if n == 0 {
 		return GridMatrices{}
 	}
 
-	// Boundaries of polygons space
-	xlim := [2]float64{polygons[0][0][0], polygons[0][0][0]}
-	ylim := [2]float64{polygons[0][0][1], polygons[0][0][1]}
+	// Boundaries of polygon space
+	xlim := [2]float64{polygon[0][0][0], polygon[0][0][0]}
+	ylim := [2]float64{polygon[0][0][1], polygon[0][0][1]}
 
 	// Polygons
 	for i := 0; i < n; i++ {
 		// Vertices
-		for j := 0; j < len(polygons[i]); j++ {
-			if polygons[i][j][0] < xlim[0] {
-				xlim[0] = polygons[i][j][0]
+		for j := 0; j < len(polygon[i]); j++ {
+			if polygon[i][j][0] < xlim[0] {
+				xlim[0] = polygon[i][j][0]
 			}
-			if polygons[i][j][0] > xlim[1] {
-				xlim[1] = polygons[i][j][0]
+			if polygon[i][j][0] > xlim[1] {
+				xlim[1] = polygon[i][j][0]
 			}
-			if polygons[i][j][1] < ylim[0] {
-				ylim[0] = polygons[i][j][1]
+			if polygon[i][j][1] < ylim[0] {
+				ylim[0] = polygon[i][j][1]
 			}
-			if polygons[i][j][1] > ylim[1] {
-				ylim[1] = polygons[i][j][1]
+			if polygon[i][j][1] > ylim[1] {
+				ylim[1] = polygon[i][j][1]
 			}
 		}
 	}
@@ -289,23 +291,23 @@ func (variogram *Variogram) Grid(polygons [][][2]float64, width float64) GridMat
 		A[i] = make([]float64, y+1)
 	}
 	for i := 0; i < n; i++ {
-		// Range for polygons[i]
-		lxlim[0] = polygons[i][0][0]
+		// Range for polygon[i]
+		lxlim[0] = polygon[i][0][0]
 		lxlim[1] = lxlim[0]
-		lylim[0] = polygons[i][0][1]
+		lylim[0] = polygon[i][0][1]
 		lylim[1] = lylim[0]
-		for j := 1; j < len(polygons[i]); j++ { // Vertices
-			if polygons[i][j][0] < lxlim[0] {
-				lxlim[0] = polygons[i][j][0]
+		for j := 1; j < len(polygon[i]); j++ { // Vertices
+			if polygon[i][j][0] < lxlim[0] {
+				lxlim[0] = polygon[i][j][0]
 			}
-			if polygons[i][j][0] > lxlim[1] {
-				lxlim[1] = polygons[i][j][0]
+			if polygon[i][j][0] > lxlim[1] {
+				lxlim[1] = polygon[i][j][0]
 			}
-			if polygons[i][j][1] < lylim[0] {
-				lylim[0] = polygons[i][j][1]
+			if polygon[i][j][1] < lylim[0] {
+				lylim[0] = polygon[i][j][1]
 			}
-			if polygons[i][j][1] > lylim[1] {
-				lylim[1] = polygons[i][j][1]
+			if polygon[i][j][1] > lylim[1] {
+				lylim[1] = polygon[i][j][1]
 			}
 		}
 
@@ -318,8 +320,11 @@ func (variogram *Variogram) Grid(polygons [][][2]float64, width float64) GridMat
 			for k := b[0]; k <= b[1]; k++ {
 				xtarget = xlim[0] + float64(j)*width
 				ytarget = ylim[0] + float64(k)*width
-
-				if pipFloat64(polygons[i], xtarget, ytarget) {
+				var floatList [][2]float64
+				for _, lineString := range polygon[i] {
+					floatList = append(floatList, lineString)
+				}
+				if pipFloat64(floatList, xtarget, ytarget) {
 					A[j][k] = variogram.Predict(xtarget,
 						ytarget,
 					)
