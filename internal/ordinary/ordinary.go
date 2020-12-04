@@ -5,7 +5,6 @@
 package ordinary
 
 import (
-	"github.com/paulmach/orb"
 	"image"
 	"image/color"
 	"math"
@@ -27,6 +26,10 @@ type Variogram struct {
 	K     []float64      `json:"K"`
 	M     []float64      `json:"M"`
 	model variogramModel `json:"-"`
+}
+
+func NewOrdinary(t, x, y []float64) *Variogram {
+	return &Variogram{T: t, X: x, Y: y}
 }
 
 type variogramModel func(float64, float64, float64, float64, float64) float64
@@ -249,10 +252,10 @@ func (variogram *Variogram) Variance(x, y float64) {
 }
 
 // Grid gridded matrices or contour paths
-func (variogram *Variogram) Grid(polygon orb.Polygon, width float64) GridMatrices {
+func (variogram *Variogram) Grid(polygon Polygon, width float64) *GridMatrices {
 	n := len(polygon)
 	if n == 0 {
-		return GridMatrices{}
+		return &GridMatrices{}
 	}
 
 	// Boundaries of polygon space
@@ -279,12 +282,12 @@ func (variogram *Variogram) Grid(polygon orb.Polygon, width float64) GridMatrice
 	}
 
 	// Alloc for O(n^2) space
-	var xtarget, ytarget float64
+	var xTarget, yTarget float64
 	var a, b [2]int
 	var lxlim [2]float64 // Local dimensions
 	var lylim [2]float64 // Local dimensions
-	var x = int(math.Ceil((xlim[1] - xlim[0]) / width))
-	var y = int(math.Ceil((ylim[1] - ylim[0]) / width))
+	x := int(math.Ceil((xlim[1] - xlim[0]) / width))
+	y := int(math.Ceil((ylim[1] - ylim[0]) / width))
 
 	A := make([][]float64, x+1)
 	for i := 0; i <= x; i++ {
@@ -318,26 +321,23 @@ func (variogram *Variogram) Grid(polygon orb.Polygon, width float64) GridMatrice
 		b[1] = int(math.Ceil(((lylim[1] - math.Mod(lylim[1]-ylim[1], width)) - ylim[0]) / width))
 		for j := a[0]; j <= a[1]; j++ {
 			for k := b[0]; k <= b[1]; k++ {
-				xtarget = xlim[0] + float64(j)*width
-				ytarget = ylim[0] + float64(k)*width
-				var floatList [][2]float64
-				for _, lineString := range polygon[i] {
-					floatList = append(floatList, lineString)
-				}
-				if pipFloat64(floatList, xtarget, ytarget) {
-					A[j][k] = variogram.Predict(xtarget,
-						ytarget,
+				xTarget = xlim[0] + float64(j)*width
+				yTarget = ylim[0] + float64(k)*width
+
+				if pipFloat64(polygon[i], xTarget, yTarget) {
+					A[j][k] = variogram.Predict(xTarget,
+						yTarget,
 					)
 				}
 			}
 		}
 	}
 
-	gridMatrices := GridMatrices{
-		xlim:  xlim,
-		ylim:  ylim,
-		zlim:  [2]float64{minFloat64(variogram.T), maxFloat64(variogram.T)},
-		width: width, data: A,
+	gridMatrices := &GridMatrices{
+		Xlim:  xlim,
+		Ylim:  ylim,
+		Zlim:  [2]float64{minFloat64(variogram.T), maxFloat64(variogram.T)},
+		Width: width, Data: A,
 	}
 	return gridMatrices
 }
@@ -382,9 +382,9 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 		"grid":        grid,
 		"n":           xWidth,
 		"m":           yWidth,
-		"xlim":        xlim,
-		"ylim":        ylim,
-		"zlim":        zlim,
+		"Xlim":        xlim,
+		"Ylim":        ylim,
+		"Zlim":        zlim,
 		"xResolution": xResolution,
 		"yResolution": yResolution,
 	}
