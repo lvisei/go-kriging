@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer timeCost()()
+	defer timeCost()("训练模型加插值总耗时")
 
 	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["lons"], data["lats"])
 	_ = ordinaryKriging.Train(ordinary.Exponential, 0, 100)
@@ -57,14 +57,14 @@ func main() {
 }
 
 func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Polygon) {
-	defer timeCost()()
+	defer timeCost()("插值耗时")
 	gridMatrices := ordinaryKriging.Grid(polygon, 0.01)
 	_ = gridMatrices
 	writeFile("gridMatrices.json", gridMatrices)
 }
 
 func generatePng(ordinaryKriging *ordinary.Variogram) {
-	defer timeCost()()
+	defer timeCost()("生成插值图片耗时")
 	xWidth, yWidth := 800, 800
 	krigingValue, rangeMaxPM, colorperiod := ordinaryKriging.GeneratePngGrid(xWidth, yWidth)
 	pngPath := fmt.Sprintf("%v/%v.png", dirPath, time.Now().Format("2006-01-02 15:04:05"))
@@ -154,11 +154,11 @@ func readGeoJsonFile(filePath string) (ordinary.Polygon, error) {
 	return p, nil
 }
 
-func timeCost() func() {
+func timeCost() func(name string) {
 	start := time.Now()
-	return func() {
+	return func(name string) {
 		tc := time.Since(start)
-		fmt.Printf("time cost = %v s\n", tc.Seconds())
+		fmt.Printf("%v : time cost = %v s\n", name, tc.Seconds())
 	}
 }
 
