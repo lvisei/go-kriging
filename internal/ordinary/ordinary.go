@@ -13,15 +13,15 @@ import (
 
 // Variogram ordinary kriging variogram
 type Variogram struct {
-	T []float64 `json:"-"`
-	X []float64 `json:"-"`
-	Y []float64 `json:"-"`
+	t []float64 `json:"-"`
+	x []float64 `json:"-"`
+	y []float64 `json:"-"`
 
-	nugget float64 `json:"nugget"`
-	range_ float64 `json:"range"`
-	sill   float64 `json:"sill"`
+	Nugget float64 `json:"nugget"`
+	Range  float64 `json:"range"`
+	Sill   float64 `json:"sill"`
 	A      float64 `json:"A"`
-	n      int     `json:"n"`
+	N      int     `json:"n"`
 
 	K     []float64      `json:"K"`
 	M     []float64      `json:"M"`
@@ -29,7 +29,7 @@ type Variogram struct {
 }
 
 func NewOrdinary(t, x, y []float64) *Variogram {
-	return &Variogram{T: t, X: x, Y: y}
+	return &Variogram{t: t, x: x, y: y}
 }
 
 type variogramModel func(float64, float64, float64, float64, float64) float64
@@ -62,11 +62,11 @@ func krigingVariogramSpherical(h, nugget, range_, sill, A float64) float64 {
 
 // Train using gaussian processes with bayesian priors
 func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64) *Variogram {
-	variogram.nugget = 0.0
-	variogram.range_ = 0.0
-	variogram.sill = 0.0
+	variogram.Nugget = 0.0
+	variogram.Range = 0.0
+	variogram.Sill = 0.0
 	variogram.A = float64(1) / float64(3)
-	variogram.n = 0.0
+	variogram.N = 0.0
 
 	switch model {
 	case Gaussian:
@@ -82,7 +82,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 
 	// Lag distance/semivariance
 	var i, j, k, l, n int
-	n = len(variogram.T)
+	n = len(variogram.t)
 
 	var distance DistanceList
 	distance = make([][2]float64, (n*n-n)/2)
@@ -93,15 +93,15 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 		for j = 0; j < i; {
 			distance[k] = [2]float64{}
 			distance[k][0] = math.Pow(
-				math.Pow(variogram.X[i]-variogram.X[j], 2)+
-					math.Pow(variogram.Y[i]-variogram.Y[j], 2), 0.5)
-			distance[k][1] = math.Abs(variogram.T[i] - variogram.T[j])
+				math.Pow(variogram.x[i]-variogram.x[j], 2)+
+					math.Pow(variogram.y[i]-variogram.y[j], 2), 0.5)
+			distance[k][1] = math.Abs(variogram.t[i] - variogram.t[j])
 			j++
 			k++
 		}
 	}
 	sort.Sort(distance)
-	variogram.range_ = distance[(n*n-n)/2-1][0]
+	variogram.Range = distance[(n*n-n)/2-1][0]
 
 	// TODO: Go
 	// Bin lag distance
@@ -112,7 +112,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 		lags = (n*n - n) / 2
 	}
 
-	tolerance := variogram.range_ / float64(lags)
+	tolerance := variogram.Range / float64(lags)
 
 	lag := make([]float64, lags)
 	semi := make([]float64, lags)
@@ -156,7 +156,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 
 	// Feature transformation
 	n = l
-	variogram.range_ = lag[n-1] - lag[0]
+	variogram.Range = lag[n-1] - lag[0]
 	X := make([]float64, 2*n)
 	for i := 0; i < len(X); i++ {
 		X[i] = 1
@@ -166,13 +166,13 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	for i = 0; i < n; i++ {
 		switch model {
 		case Gaussian:
-			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*math.Pow(lag[i]/variogram.range_, 2))
+			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*math.Pow(lag[i]/variogram.Range, 2))
 			break
 		case Exponential:
-			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*lag[i]/variogram.range_)
+			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*lag[i]/variogram.Range)
 			break
 		case Spherical:
-			X[i*2+1] = 1.5*(lag[i]/variogram.range_) - 0.5*math.Pow(lag[i]/variogram.range_, 3)
+			X[i*2+1] = 1.5*(lag[i]/variogram.Range) - 0.5*math.Pow(lag[i]/variogram.Range, 3)
 			break
 		}
 		Y[i] = semi[i]
@@ -192,26 +192,26 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	var W = krigingMatrixMultiply(krigingMatrixMultiply(Z, Xt, 2, 2, n), Y, 2, n, 1)
 
 	// Variogram parameters
-	variogram.nugget = W[0]
-	variogram.sill = W[1]*variogram.range_ + variogram.nugget
-	variogram.n = len(variogram.X)
+	variogram.Nugget = W[0]
+	variogram.Sill = W[1]*variogram.Range + variogram.Nugget
+	variogram.N = len(variogram.x)
 
 	// Gram matrix with prior
-	n = len(variogram.X)
+	n = len(variogram.x)
 	K := make([]float64, n*n)
 	for i = 0; i < n; i++ {
 		for j = 0; j < i; j++ {
-			K[i*n+j] = variogram.model(math.Pow(math.Pow(variogram.X[i]-variogram.X[j], 2)+
-				math.Pow(variogram.Y[i]-variogram.Y[j], 2), 0.5),
-				variogram.nugget,
-				variogram.range_,
-				variogram.sill,
+			K[i*n+j] = variogram.model(math.Pow(math.Pow(variogram.x[i]-variogram.x[j], 2)+
+				math.Pow(variogram.y[i]-variogram.y[j], 2), 0.5),
+				variogram.Nugget,
+				variogram.Range,
+				variogram.Sill,
 				variogram.A)
 			K[j*n+i] = K[i*n+j]
 		}
-		K[i*n+i] = variogram.model(0, variogram.nugget,
-			variogram.range_,
-			variogram.sill,
+		K[i*n+i] = variogram.model(0, variogram.Nugget,
+			variogram.Range,
+			variogram.Sill,
 			variogram.A)
 	}
 
@@ -227,7 +227,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 
 	// Copy unprojected inverted matrix as K
 	K = C
-	M := krigingMatrixMultiply(C, variogram.T, n, n, 1)
+	M := krigingMatrixMultiply(C, variogram.t, n, n, 1)
 	variogram.K = K
 	variogram.M = M
 
@@ -236,15 +236,16 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 
 // Predict model prediction
 func (variogram *Variogram) Predict(x, y float64) float64 {
-	k := make([]float64, variogram.n)
-	for i := 0; i < variogram.n; i++ {
-		k[i] = variogram.model(math.Pow(math.Pow(x-variogram.X[i], 2)+
-			math.Pow(y-variogram.Y[i], 2), 0.5),
-			variogram.nugget, variogram.range_,
-			variogram.sill, variogram.A)
+	k := make([]float64, variogram.N)
+	for i := 0; i < variogram.N; i++ {
+		k[i] = variogram.model(
+			math.Pow(math.Pow(x-variogram.x[i], 2)+math.Pow(y-variogram.y[i], 2), 0.5),
+			variogram.Nugget, variogram.Range,
+			variogram.Sill, variogram.A,
+		)
 	}
 
-	return krigingMatrixMultiply(k, variogram.M, 1, variogram.n, 1)[0]
+	return krigingMatrixMultiply(k, variogram.M, 1, variogram.N, 1)[0]
 }
 
 func (variogram *Variogram) Variance(x, y float64) {
@@ -281,7 +282,7 @@ func (variogram *Variogram) Grid(polygon Polygon, width float64) *GridMatrices {
 		}
 	}
 
-	// Alloc for O(n^2) space
+	// Alloc for O(N^2) space
 	var xTarget, yTarget float64
 	var a, b [2]int
 	var lxlim [2]float64 // Local dimensions
@@ -336,7 +337,7 @@ func (variogram *Variogram) Grid(polygon Polygon, width float64) *GridMatrices {
 	gridMatrices := &GridMatrices{
 		Xlim:  xlim,
 		Ylim:  ylim,
-		Zlim:  [2]float64{minFloat64(variogram.T), maxFloat64(variogram.T)},
+		Zlim:  [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)},
 		Width: width, Data: A,
 	}
 	return gridMatrices
@@ -349,7 +350,7 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 	// x方向
 	xlim := [2]float64{bbox[0], bbox[2]}
 	ylim := [2]float64{bbox[1], bbox[3]}
-	zlim := [2]float64{minFloat64(variogram.T), maxFloat64(variogram.T)}
+	zlim := [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)}
 
 	// xy 方向地理跨度
 	geoxWidth := xlim[1] - xlim[0]
@@ -380,7 +381,7 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 	}
 	gridDate := map[string]interface{}{
 		"grid":        grid,
-		"n":           xWidth,
+		"N":           xWidth,
 		"m":           yWidth,
 		"Xlim":        xlim,
 		"Ylim":        ylim,
@@ -404,12 +405,12 @@ func (variogram *Variogram) Plot() {
 
 // GeneratePngGrid
 func (variogram *Variogram) GeneratePngGrid(xWidth, yWidth int) ([]float64, float64, float64) {
-	rangeMaxX := maxFloat64(variogram.X)
-	rangeMinX := minFloat64(variogram.X)
-	rangeMaxY := maxFloat64(variogram.Y)
-	rangeMinY := minFloat64(variogram.Y)
-	rangeMaxT := maxFloat64(variogram.T)
-	rangeMinT := minFloat64(variogram.T)
+	rangeMaxX := maxFloat64(variogram.x)
+	rangeMinX := minFloat64(variogram.x)
+	rangeMaxY := maxFloat64(variogram.y)
+	rangeMinY := minFloat64(variogram.y)
+	rangeMaxT := maxFloat64(variogram.t)
+	rangeMinT := minFloat64(variogram.t)
 	colorperiod := (rangeMaxT - rangeMinT) / 5
 	var xl = rangeMaxX - rangeMinX
 	var yl = rangeMaxY - rangeMinY

@@ -40,13 +40,13 @@ func TestGenerateData(t *testing.T) {
 
 func TestTrain(t *testing.T) {
 	values, lats, lons := generateData(100)
-	ordinaryKriging := &ordinary.Variogram{T: values, X: lats, Y: lons}
+	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
 }
 
 func TestPredict(t *testing.T) {
 	values, lats, lons := generateData(100)
-	ordinaryKriging := &ordinary.Variogram{T: values, X: lats, Y: lons}
+	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
 	ordinaryKriging.GeneratePngGrid(200, 2000)
 }
@@ -54,7 +54,7 @@ func TestPredict(t *testing.T) {
 func TestOrdinaryKriging(t *testing.T) {
 	values, lats, lons := generateData(100)
 
-	ordinaryKriging := &ordinary.Variogram{T: values, X: lats, Y: lons}
+	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
 
 	xWidth, yWidth := 500, 500

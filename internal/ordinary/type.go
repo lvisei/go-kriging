@@ -1,11 +1,11 @@
 package ordinary
 
-type ModelType int
+type ModelType string
 
 const (
-	Gaussian    ModelType = iota // value --> 0
-	Exponential                  // value --> 1
-	Spherical                    // value --> 2
+	Gaussian    ModelType = "gaussian"
+	Exponential ModelType = "exponential"
+	Spherical   ModelType = "spherical"
 )
 
 type DistanceList [][2]float64
