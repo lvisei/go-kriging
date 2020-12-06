@@ -12,16 +12,22 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"strconv"
-	"sync"
 	"time"
 )
 
 const dirPath = "testdata"
 
 func main() {
-	var wg sync.WaitGroup
-	wg.Add(2)
+	cpuProfile, _ := os.Create("./testdata/cpu_profile")
+	pprof.StartCPUProfile(cpuProfile)
+	defer pprof.StopCPUProfile()
+	//memProfile, _ := os.Create("./testdata/mem_profile")
+	//pprof.WriteHeapProfile(memProfile)
+	//defer memProfile.Close()
+	//var wg sync.WaitGroup
+	//wg.Add(1)
 	data, err := readCsvFile("examples/csv/data/2045.csv")
 	if err != nil {
 		log.Fatal(err)
@@ -32,28 +38,22 @@ func main() {
 	}
 	defer timeCost()()
 
-	ordinaryKriging := &ordinary.Variogram{T: data["values"], X: data["lons"], Y: data["lats"]}
+	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["lons"], data["lats"])
 	_ = ordinaryKriging.Train(ordinary.Exponential, 0, 100)
 	//writeFile("variogram.json", variogram)
 
-	_ = polygon
+	//go func() {
+	//	defer wg.Done()
+	//	generateGridData(ordinaryKriging, polygon)
+	//}()
+	generateGridData(ordinaryKriging, polygon)
 
-	go func() {
-		defer wg.Done()
-		generateGridData(ordinaryKriging, polygon)
-	}()
+	//go func() {
+	//	defer wg.Done()
+	//	generatePng(ordinaryKriging)
+	//}()
 
-	//bound := polygon.Bound()
-	//bbox := [4]float64{bound.Min.Lat(), bound.Min.Lon(), bound.Max.Lat(), bound.Max.Lon()}
-	//gridDate := ordinaryKriging.RectangleGrid(bbox, 0.01)
-	//writeFile("gridDate.json", gridDate)
-
-	go func() {
-		defer wg.Done()
-		generatePng(ordinaryKriging)
-	}()
-
-	wg.Wait()
+	//wg.Wait()
 }
 
 func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Polygon) {
@@ -62,6 +62,7 @@ func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Poly
 	_ = gridMatrices
 	writeFile("gridMatrices.json", gridMatrices)
 }
+
 func generatePng(ordinaryKriging *ordinary.Variogram) {
 	defer timeCost()()
 	xWidth, yWidth := 800, 800
@@ -78,6 +79,14 @@ func generatePng(ordinaryKriging *ordinary.Variogram) {
 	}
 	defer file.Close()
 	png.Encode(file, img)
+}
+
+func generateRectangleGrid() {
+	//bound := polygon.Bound()
+	//bbox := [4]float64{bound.Min.Lat(), bound.Min.Lon(), bound.Max.Lat(), bound.Max.Lon()}
+	//gridDate := ordinaryKriging.RectangleGrid(bbox, 0.01)
+	//writeFile("gridDate.json", gridDate)
+
 }
 
 func readCsvFile(filePath string) (map[string][]float64, error) {
