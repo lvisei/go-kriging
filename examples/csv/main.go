@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
+	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/geojson"
 	"image/png"
@@ -21,11 +21,19 @@ const dirPath = "testdata"
 
 func main() {
 	cpuProfile, _ := os.Create("./testdata/cpu_profile")
-	pprof.StartCPUProfile(cpuProfile)
-	defer pprof.StopCPUProfile()
+	if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+		log.Fatal(err)
+	}
 	//memProfile, _ := os.Create("./testdata/mem_profile")
-	//pprof.WriteHeapProfile(memProfile)
-	//defer memProfile.Close()
+	//if err := pprof.WriteHeapProfile(memProfile); err != nil {
+	//	log.Fatal(err)
+	//}
+	defer func() {
+		pprof.StopCPUProfile()
+		cpuProfile.Close()
+		//memProfile.Close()
+	}()
+
 	//var wg sync.WaitGroup
 	//wg.Add(1)
 	data, err := readCsvFile("examples/csv/data/2045.csv")

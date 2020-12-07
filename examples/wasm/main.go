@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
-	"github.com/paulmach/orb"
-	"github.com/paulmach/orb/geojson"
 	"log"
 	"syscall/js"
 )
@@ -37,7 +35,7 @@ func RunOrdinaryKrigingFunc(this js.Value, args []js.Value) interface{} {
 	alpha := args[5].Float()
 
 	geoJsonString := args[6].String()
-	polygon, err := readGeoJsonBytes([]byte(geoJsonString))
+	polygon, err := readPolygonBytes([]byte(geoJsonString))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,6 +58,7 @@ func RunOrdinaryKrigingFunc(this js.Value, args []js.Value) interface{} {
 }
 
 func RunOrdinaryKrigingTrainFunc(this js.Value, args []js.Value) interface{} {
+	//done := make(chan *ordinary.Variogram, 1)
 	values := make([]float64, args[0].Length())
 	for i := 0; i < len(values); i++ {
 		values[i] = args[0].Index(i).Float()
@@ -75,6 +74,13 @@ func RunOrdinaryKrigingTrainFunc(this js.Value, args []js.Value) interface{} {
 	model := args[3].String()
 	sigma2 := args[4].Float()
 	alpha := args[5].Float()
+
+	//go func() {
+	//	variogram := RunOrdinaryKrigingTrain(values, lons, lats, model, sigma2, alpha)
+	//	done <- variogram
+	//}()
+	//
+	//variogram := <-done
 
 	variogram := RunOrdinaryKrigingTrain(values, lons, lats, model, sigma2, alpha)
 	variogramBuffer, err := json.Marshal(variogram)
@@ -98,23 +104,13 @@ func RunOrdinaryKriging(values, lons, lats []float64, model string, sigma2 float
 	return ordinaryKriging.Grid(polygon, 0.01)
 }
 
-func readGeoJsonBytes(content []byte) (ordinary.Polygon, error) {
-	fc := geojson.NewFeatureCollection()
-	err := json.Unmarshal(content, &fc)
+func readPolygonBytes(content []byte) (ordinary.Polygon, error) {
+	var polygon ordinary.Polygon
+	err := json.Unmarshal(content, &polygon)
 	if err != nil {
 		log.Fatalf("invalid json: %v", err)
 		return nil, err
 	}
-	polygon := fc.Features[0].Geometry.(orb.Polygon)
 
-	p := make(ordinary.Polygon, 0, len(polygon))
-	for _, ring := range polygon {
-		points := make([][2]float64, 0, len(ring))
-		for _, point := range ring {
-			points = append(points, [2]float64{point.X(), point.Y()})
-		}
-		p = append(p, points)
-	}
-
-	return p, nil
+	return polygon, nil
 }

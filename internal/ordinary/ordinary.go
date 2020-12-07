@@ -40,14 +40,16 @@ type variogramModel func(float64, float64, float64, float64, float64) float64
 
 // krigingVariogramGaussian gaussian variogram models
 func krigingVariogramGaussian(h, nugget, range_, sill, A float64) float64 {
+	x := -(1.0 / A) * ((h / range_) * (h / range_))
 	return nugget + ((sill-nugget)/range_)*
-		(1.0-math.Exp(-(1.0/A)*math.Pow(h/range_, 2)))
+		(1.0-exp(x))
 }
 
 // krigingVariogramExponential exponential variogram models
 func krigingVariogramExponential(h, nugget, range_, sill, A float64) float64 {
+	x := -(1.0 / A) * (h / range_)
 	return nugget + ((sill-nugget)/range_)*
-		(1.0-math.Exp(-(1.0/A)*(h/range_)))
+		(1.0-exp(x))
 }
 
 // krigingVariogramSpherical spherical variogram models
@@ -55,8 +57,9 @@ func krigingVariogramSpherical(h, nugget, range_, sill, A float64) float64 {
 	if h > range_ {
 		return nugget + (sill-nugget)/range_
 	} else {
+		x := h / range_
 		return nugget + ((sill-nugget)/range_)*
-			(1.5*(h/range_)-0.5*math.Pow(h/range_, 3))
+			(1.5*(x)-0.5*(x*x*x))
 	}
 }
 
@@ -92,9 +95,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	for ; i < n; i++ {
 		for j = 0; j < i; {
 			distance[k] = [2]float64{}
-			distance[k][0] = math.Pow(
-				math.Pow(variogram.x[i]-variogram.x[j], 2)+
-					math.Pow(variogram.y[i]-variogram.y[j], 2), 0.5)
+			distance[k][0] = math.Sqrt(pow2(variogram.x[i]-variogram.x[j]) + pow2(variogram.y[i]-variogram.y[j]))
 			distance[k][1] = math.Abs(variogram.t[i] - variogram.t[j])
 			j++
 			k++
@@ -166,13 +167,13 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	for i = 0; i < n; i++ {
 		switch model {
 		case Gaussian:
-			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*math.Pow(lag[i]/variogram.Range, 2))
+			X[i*2+1] = 1.0 - exp(-(1.0/A)*pow2(lag[i]/variogram.Range))
 			break
 		case Exponential:
-			X[i*2+1] = 1.0 - math.Exp(-(1.0/A)*lag[i]/variogram.Range)
+			X[i*2+1] = 1.0 - exp(-(1.0/A)*lag[i]/variogram.Range)
 			break
 		case Spherical:
-			X[i*2+1] = 1.5*(lag[i]/variogram.Range) - 0.5*math.Pow(lag[i]/variogram.Range, 3)
+			X[i*2+1] = 1.5*(lag[i]/variogram.Range) - 0.5*pow3(lag[i]/variogram.Range)
 			break
 		}
 		Y[i] = semi[i]
@@ -201,8 +202,8 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	K := make([]float64, n*n)
 	for i = 0; i < n; i++ {
 		for j = 0; j < i; j++ {
-			K[i*n+j] = variogram.model(math.Pow(math.Pow(variogram.x[i]-variogram.x[j], 2)+
-				math.Pow(variogram.y[i]-variogram.y[j], 2), 0.5),
+			K[i*n+j] = variogram.model(
+				math.Sqrt(pow2(variogram.x[i]-variogram.x[j])+pow2(variogram.y[i]-variogram.y[j])),
 				variogram.Nugget,
 				variogram.Range,
 				variogram.Sill,
@@ -238,8 +239,19 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 func (variogram *Variogram) Predict(x, y float64) float64 {
 	k := make([]float64, variogram.N)
 	for i := 0; i < variogram.N; i++ {
+		//k[i] = variogram.model(
+		//	math.Pow(
+		//		math.Pow(x-variogram.x[i], 2)+math.Pow(y-variogram.y[i], 2),
+		//		0.5,
+		//	),
+		//	variogram.Nugget, variogram.Range,
+		//	variogram.Sill, variogram.A,
+		//)
+		x_ := x - variogram.x[i]
+		y_ := y - variogram.y[i]
+		h := math.Sqrt(pow2(x_) + pow2(y_))
 		k[i] = variogram.model(
-			math.Pow(math.Pow(x-variogram.x[i], 2)+math.Pow(y-variogram.y[i], 2), 0.5),
+			h,
 			variogram.Nugget, variogram.Range,
 			variogram.Sill, variogram.A,
 		)

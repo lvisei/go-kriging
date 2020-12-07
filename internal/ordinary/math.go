@@ -1,5 +1,7 @@
 package ordinary
 
+import "math"
+
 func minFloat64(t []float64) float64 {
 	min := float64(0)
 	for i := 0; i < len(t); i++ {
@@ -31,4 +33,19 @@ func pipFloat64(t [][2]float64, x, y float64) bool {
 	}
 
 	return c
+}
+
+func exp(x float64) float64 {
+	if x == 0 {
+		return 1
+	}
+	return math.Exp(x)
+}
+
+func pow2(x float64) float64 {
+	return x * x
+}
+
+func pow3(x float64) float64 {
+	return x * x * x
 }
