@@ -13,9 +13,9 @@ import (
 
 // Variogram ordinary kriging variogram
 type Variogram struct {
-	t []float64 `json:"-"`
-	x []float64 `json:"-"`
-	y []float64 `json:"-"`
+	t []float64
+	x []float64
+	y []float64
 
 	Nugget float64 `json:"nugget"`
 	Range  float64 `json:"range"`
@@ -25,7 +25,7 @@ type Variogram struct {
 
 	K     []float64      `json:"K"`
 	M     []float64      `json:"M"`
-	model variogramModel `json:"-"`
+	model variogramModel
 }
 
 func NewOrdinary(t, x, y []float64) *Variogram {
@@ -59,7 +59,7 @@ func krigingVariogramSpherical(h, nugget, range_, sill, A float64) float64 {
 	} else {
 		x := h / range_
 		return nugget + ((sill-nugget)/range_)*
-			(1.5*(x)-0.5*(x*x*x))
+			(1.5*(x)-0.5*(pow3(x)))
 	}
 }
 
@@ -265,7 +265,7 @@ func (variogram *Variogram) Variance(x, y float64) {
 }
 
 // Grid gridded matrices or contour paths
-func (variogram *Variogram) Grid(polygon Polygon, width float64) *GridMatrices {
+func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *GridMatrices {
 	n := len(polygon)
 	if n == 0 {
 		return &GridMatrices{}
@@ -365,8 +365,8 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 	zlim := [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)}
 
 	// xy 方向地理跨度
-	geoxWidth := xlim[1] - xlim[0]
-	geoyWidth := ylim[1] - ylim[0]
+	geoXWidth := xlim[1] - xlim[0]
+	geoYWidth := ylim[1] - ylim[0]
 
 	// 如果x_width设置，初始基于200计算
 	var xWidth, yWidth int
@@ -376,11 +376,11 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 		xWidth = int(math.Ceil(width))
 	}
 	//让图像的xy比例与地理的xy比例保持一致
-	yWidth = int(math.Ceil(float64(xWidth) / (geoxWidth / geoyWidth)))
+	yWidth = int(math.Ceil(float64(xWidth) / (geoXWidth / geoYWidth)))
 
 	//地理跨度/图像跨度=当前地图图上分辨率
-	var xResolution = geoxWidth * 1.0 / float64(xWidth)
-	var yResolution = geoyWidth * 1.0 / float64(yWidth)
+	var xResolution = geoXWidth * 1.0 / float64(xWidth)
+	var yResolution = geoYWidth * 1.0 / float64(yWidth)
 
 	var xTarget, yTarget float64
 

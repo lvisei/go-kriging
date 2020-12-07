@@ -98,19 +98,19 @@ func RunOrdinaryKrigingTrain(values, lons, lats []float64, model string, sigma2 
 	return variogram
 }
 
-func RunOrdinaryKriging(values, lons, lats []float64, model string, sigma2 float64, alpha float64, polygon ordinary.Polygon) *ordinary.GridMatrices {
+func RunOrdinaryKriging(values, lons, lats []float64, model string, sigma2 float64, alpha float64, polygon ordinary.PolygonCoordinates) *ordinary.GridMatrices {
 	ordinaryKriging := ordinary.NewOrdinary(values, lons, lats)
 	_ = ordinaryKriging.Train(ordinary.ModelType(model), sigma2, alpha)
 	return ordinaryKriging.Grid(polygon, 0.01)
 }
 
-func readPolygonBytes(content []byte) (ordinary.Polygon, error) {
-	var polygon ordinary.Polygon
-	err := json.Unmarshal(content, &polygon)
+func readPolygonBytes(content []byte) (ordinary.PolygonCoordinates, error) {
+	var polygonGeometry ordinary.PolygonGeometry
+	err := json.Unmarshal(content, &polygonGeometry)
 	if err != nil {
 		log.Fatalf("invalid json: %v", err)
 		return nil, err
 	}
 
-	return polygon, nil
+	return polygonGeometry.Coordinates, nil
 }

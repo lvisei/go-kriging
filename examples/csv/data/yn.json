@@ -1,23 +1,4 @@
-{
-  "type": "FeatureCollection",
-  "features": [
-  {
-    "type": "Feature",
-    "properties":
-    {
-      "adcode": 530000,
-      "name": "云南省",
-      "center": [102.712251, 25.040609],
-      "centroid": [101.485108, 25.008645],
-      "childrenNum": 16,
-      "level": "province",
-      "acroutes": [100000],
-      "parent":
-      {
-        "adcode": 100000
-      }
-    },
-    "geometry":
+
     {
       "type": "Polygon",
       "coordinates": [
@@ -1809,5 +1790,3 @@
         ]
       ]
     }
-  }]
-}

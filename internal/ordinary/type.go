@@ -25,11 +25,16 @@ func (t DistanceList) Swap(i, j int) {
 }
 
 type GridMatrices struct {
-	Data  [][]float64 `json:"Data"`
-	Width float64     `json:"Width"`
-	Xlim  [2]float64  `json:"Xlim"`
-	Ylim  [2]float64  `json:"Ylim"`
-	Zlim  [2]float64  `json:"Zlim"`
+	Data  [][]float64 `json:"data"`
+	Width float64     `json:"width"`
+	Xlim  [2]float64  `json:"xLim"`
+	Ylim  [2]float64  `json:"yLim"`
+	Zlim  [2]float64  `json:"zLim"`
 }
 
-type Polygon [][][2]float64
+type PolygonCoordinates [][][2]float64
+
+type PolygonGeometry struct {
+	Type        string             `json:"type"`
+	Coordinates PolygonCoordinates `json:"coordinates,omitempty"`
+}

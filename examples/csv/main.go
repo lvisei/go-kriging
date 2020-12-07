@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
-	"github.com/paulmach/orb"
-	"github.com/paulmach/orb/geojson"
 	"image/png"
 	"io/ioutil"
 	"log"
@@ -47,7 +45,7 @@ func main() {
 	defer timeCost()("训练模型加插值总耗时")
 
 	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["lons"], data["lats"])
-	_ = ordinaryKriging.Train(ordinary.Exponential, 0, 100)
+	_ = ordinaryKriging.Train(ordinary.Spherical, 0, 100)
 	//writeFile("variogram.json", variogram)
 
 	//go func() {
@@ -64,7 +62,7 @@ func main() {
 	//wg.Wait()
 }
 
-func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Polygon) {
+func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoordinates) {
 	defer timeCost()("插值耗时")
 	gridMatrices := ordinaryKriging.Grid(polygon, 0.01)
 	_ = gridMatrices
@@ -136,30 +134,20 @@ func readCsvFile(filePath string) (map[string][]float64, error) {
 	return data, nil
 }
 
-func readGeoJsonFile(filePath string) (ordinary.Polygon, error) {
+func readGeoJsonFile(filePath string) (ordinary.PolygonCoordinates, error) {
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatal("Unable to read input file "+filePath, err)
 		return nil, err
 	}
-	fc := geojson.NewFeatureCollection()
-	err = json.Unmarshal(content, &fc)
+	var polygonGeometry ordinary.PolygonGeometry
+	err = json.Unmarshal(content, &polygonGeometry)
 	if err != nil {
 		log.Fatalf("invalid json: %v", err)
 		return nil, err
 	}
-	polygon := fc.Features[0].Geometry.(orb.Polygon)
 
-	p := make(ordinary.Polygon, 0, len(polygon))
-	for _, ring := range polygon {
-		points := make([][2]float64, 0, len(ring))
-		for _, point := range ring {
-			points = append(points, [2]float64{point.X(), point.Y()})
-		}
-		p = append(p, points)
-	}
-
-	return p, nil
+	return polygonGeometry.Coordinates, nil
 }
 
 func timeCost() func(name string) {

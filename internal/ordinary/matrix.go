@@ -2,7 +2,8 @@ package ordinary
 
 import "math"
 
-// krigingMatrixTranspose 矩阵颠倒，横向矩阵变成纵向矩阵
+// krigingMatrixTranspose The matrix is reversed, and the horizontal matrix becomes the vertical matrix
+// 矩阵颠倒，横向矩阵变成纵向矩阵
 func krigingMatrixTranspose(X []float64, n, m int) []float64 {
 	Z := make([]float64, m*n)
 	for i := 0; i < n; i++ {
@@ -14,7 +15,8 @@ func krigingMatrixTranspose(X []float64, n, m int) []float64 {
 	return Z
 }
 
-// krigingMatrixMultiply naive matrix multiplication 矩阵相乘, 横向矩阵*纵向矩阵
+// krigingMatrixMultiply naive matrix multiplication
+// 矩阵相乘, 横向矩阵乘纵向矩阵
 func krigingMatrixMultiply(X, Y []float64, n, m, p int) []float64 {
 	Z := make([]float64, n*p)
 	for i := 0; i < n; i++ {
@@ -121,17 +123,19 @@ func krigingMatrixChol2inv(X []float64, n int) {
 }
 
 // krigingMatrixSolve inversion via gauss-jordan elimination
+// 高斯-若尔当消元法
+// https://baike.baidu.com/item/%E9%AB%98%E6%96%AF-%E8%8B%A5%E5%B0%94%E5%BD%93%E6%B6%88%E5%85%83%E6%B3%95/19969775
 func krigingMatrixSolve(X []float64, n int) bool {
 	var m = n
 	var b = make([]float64, n*n)
-	var indxc = make([]int, n)
-	var indxr = make([]int, n)
-	var ipiv = make([]int, n)
-	var i, icol, irow, j, k, l, ll int
-	var big, dum, pivinv, temp float64
+	var indexC = make([]int, n)
+	var indexR = make([]int, n)
+	var ipiV = make([]int, n)
+	var iCol, iRow int
+	var dum, pivinv float64
 
-	for i = 0; i < n; i++ {
-		for j = 0; j < n; j++ {
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
 			if i == j {
 				b[i*n+j] = 1
 			} else {
@@ -140,73 +144,69 @@ func krigingMatrixSolve(X []float64, n int) bool {
 		}
 	}
 
-	for j = 0; j < n; j++ {
-		ipiv[j] = 0
+	for j := 0; j < n; j++ {
+		ipiV[j] = 0
 	}
 
-	for i = 0; i < n; i++ {
-		big = 0
-		for j = 0; j < n; j++ {
-			if ipiv[j] != 1 {
-				for k = 0; k < n; k++ {
-					if ipiv[k] == 0 {
-						if math.Abs(X[j*n+k]) >= big {
-							big = math.Abs(X[j*n+k])
-							irow = j
-							icol = k
+	for i := 0; i < n; i++ {
+		var big float64 = 0
+		for j := 0; j < n; j++ {
+			if ipiV[j] != 1 {
+				for k := 0; k < n; k++ {
+					if ipiV[k] == 0 {
+						absoluteValue := math.Abs(X[j*n+k])
+						if absoluteValue >= big {
+							big = absoluteValue
+							iRow = j
+							iCol = k
 						}
 					}
 				}
 			}
 		}
-		ipiv[icol]++
-		if irow != icol {
-			for l = 0; l < n; l++ {
-				temp = X[irow*n+l]
-				X[irow*n+l] = X[icol*n+l]
-				X[icol*n+l] = temp
+		ipiV[iCol]++
+		if iRow != iCol {
+			for l := 0; l < n; l++ {
+				X[iRow*n+l], X[iCol*n+l] = X[iCol*n+l], X[iRow*n+l]
 			}
-			for l = 0; l < m; l++ {
-				temp = b[irow*n+l]
-				b[irow*n+l] = b[icol*n+l]
-				b[icol*n+l] = temp
+			for l := 0; l < m; l++ {
+				b[iRow*n+l], b[iCol*n+l] = b[iCol*n+l], b[iRow*n+l]
 			}
 		}
-		indxr[i] = irow
-		indxc[i] = icol
+		indexR[i] = iRow
+		indexC[i] = iCol
 
-		if X[icol*n+icol] == 0 {
+		if X[iCol*n+iCol] == 0 {
 			return false
 		} // Singular
 
-		pivinv = 1 / X[icol*n+icol]
-		X[icol*n+icol] = 1
-		for l = 0; l < n; l++ {
-			X[icol*n+l] *= pivinv
+		pivinv = 1 / X[iCol*n+iCol]
+		X[iCol*n+iCol] = 1
+		for l := 0; l < n; l++ {
+			X[iCol*n+l] *= pivinv
 		}
-		for l = 0; l < m; l++ {
-			b[icol*n+l] *= pivinv
+		for l := 0; l < m; l++ {
+			b[iCol*n+l] *= pivinv
 		}
 
-		for ll = 0; ll < n; ll++ {
-			if ll != icol {
-				dum = X[ll*n+icol]
-				X[ll*n+icol] = 0
-				for l = 0; l < n; l++ {
-					X[ll*n+l] -= X[icol*n+l] * dum
+		for ll := 0; ll < n; ll++ {
+			if ll != iCol {
+				dum = X[ll*n+iCol]
+				X[ll*n+iCol] = 0
+				for l := 0; l < n; l++ {
+					X[ll*n+l] -= X[iCol*n+l] * dum
 				}
-				for l = 0; l < m; l++ {
-					b[ll*n+l] -= b[icol*n+l] * dum
+				for l := 0; l < m; l++ {
+					b[ll*n+l] -= b[iCol*n+l] * dum
 				}
 			}
 		}
 	}
-	for l = n - 1; l >= 0; l-- {
-		if indxr[l] != indxc[l] {
-			for k = 0; k < n; k++ {
-				temp = X[k*n+indxr[l]]
-				X[k*n+indxr[l]] = X[k*n+indxc[l]]
-				X[k*n+indxc[l]] = temp
+
+	for l := n - 1; l >= 0; l-- {
+		if indexR[l] != indexC[l] {
+			for k := 0; k < n; k++ {
+				X[k*n+indexR[l]], X[k*n+indexC[l]] = X[k*n+indexC[l]], X[k*n+indexR[l]]
 			}
 		}
 	}
