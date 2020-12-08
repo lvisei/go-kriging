@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 	"log"
+
 	"syscall/js"
+
+	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 )
 
 func main() {

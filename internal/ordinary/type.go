@@ -38,3 +38,23 @@ type PolygonGeometry struct {
 	Type        string             `json:"type"`
 	Coordinates PolygonCoordinates `json:"coordinates,omitempty"`
 }
+
+type RGBA [4]uint32
+
+func (c RGBA) RGBA() (r, g, b, a uint32) {
+	r = uint32(c[0])
+	r |= r << 8
+	g = uint32(c[1])
+	g |= g << 8
+	b = uint32(c[2])
+	b |= b << 8
+	a = uint32(c[3])
+	a |= a << 8
+	return
+}
+
+type GridLevelColor struct {
+	Value [2]float64 `json:"value"`
+
+	Color RGBA `json:"color"`
+}

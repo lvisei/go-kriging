@@ -3,16 +3,20 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
-	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
+	"image/color"
 	"image/png"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"runtime/pprof"
 	"strconv"
 	"time"
+
+	"runtime/pprof"
+
+	"github.com/liuvigongzuoshi/go-kriging/internal/canvas"
+	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
+	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
 )
 
 const dirPath = "testdata"
@@ -63,10 +67,56 @@ func main() {
 }
 
 func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoordinates) {
-	defer timeCost()("插值耗时")
+	defer timeCost()("插值生成成功图片耗时")
 	gridMatrices := ordinaryKriging.Grid(polygon, 0.01)
-	_ = gridMatrices
-	writeFile("gridMatrices.json", gridMatrices)
+	//colors := []color.RGBA{
+	//	color.RGBA{R: 52, G: 146, B: 199, A: 255},
+	//	color.RGBA{R: 104, G: 166, B: 179, A: 255},
+	//	color.RGBA{R: 149, G: 189, B: 158, A: 255},
+	//	color.RGBA{R: 191, G: 212, B: 138, A: 255},
+	//	color.RGBA{R: 231, G: 237, B: 114, A: 255},
+	//	color.RGBA{R: 250, G: 228, B: 90, A: 255},
+	//	color.RGBA{R: 248, G: 179, B: 68, A: 255},
+	//	color.RGBA{R: 247, G: 133, B: 50, A: 255},
+	//	color.RGBA{R: 242, G: 86, B: 34, A: 255},
+	//	color.RGBA{R: 232, G: 21, B: 19, A: 255},
+	//}
+
+	colors := []ordinary.GridLevelColor{
+		ordinary.GridLevelColor{Color: ordinary.RGBA{40, 146, 199, 255}, Value: [2]float64{-30, -15}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{96, 163, 181, 255}, Value: [2]float64{-15, -10}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{140, 184, 164, 255}, Value: [2]float64{-10, -5}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{177, 204, 145, 255}, Value: [2]float64{-5, 0}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{215, 227, 125, 255}, Value: [2]float64{0, 5}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{250, 250, 100, 255}, Value: [2]float64{5, 10}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{252, 207, 81, 255}, Value: [2]float64{10, 15}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{252, 164, 63, 255}, Value: [2]float64{15, 20}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{242, 77, 31, 255}, Value: [2]float64{25, 30}},
+		ordinary.GridLevelColor{Color: ordinary.RGBA{232, 16, 20, 255}, Value: [2]float64{30, 40}},
+	}
+	ctx := ordinaryKriging.Plot(gridMatrices, 500, 500, gridMatrices.Xlim, gridMatrices.Ylim, colors)
+
+	subTitle := &canvas.TextConfig{
+		Text:     "球面半变异函数模型",
+		FontName: "data/fonts/source-han-sans-sc/regular.ttf",
+		FontSize: 28,
+		Color:    color.RGBA{R: 0, G: 0, B: 0, A: 255},
+		OffsetX:  252,
+		OffsetY:  40,
+		AlignX:   0.5,
+	}
+	if err := ctx.DrawText(subTitle); err != nil {
+		log.Fatalf("DrawText %v", err)
+	}
+
+	//writeFile("gridMatrices.json", gridMatrices)
+	buffer, err := ctx.Output()
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		saveBuffer("grid.png", buffer)
+	}
+
 }
 
 func generatePng(ordinaryKriging *ordinary.Variogram) {
@@ -159,12 +209,18 @@ func timeCost() func(name string) {
 }
 
 func writeFile(fileName string, v interface{}) {
-	filePath := fmt.Sprintf("%v/%v %v", dirPath, time.Now().Format("2006-01-02 15:04:05"), fileName)
+	filePath := fmt.Sprintf("%v/%v %v", dirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
 	fmt.Printf("%#v\n", filePath)
 	// fmt.Printf("%#v\n", v)
 	content, err := json.Marshal(v)
 	if err != nil {
 		log.Fatal(err)
 	}
+	ioutil.WriteFile(filePath, content, os.ModePerm)
+}
+
+func saveBuffer(fileName string, content []byte) {
+	filePath := fmt.Sprintf("%v/%v %v", dirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
+	fmt.Printf("%#v\n", filePath)
 	ioutil.WriteFile(filePath, content, os.ModePerm)
 }

@@ -5,6 +5,7 @@
 package ordinary
 
 import (
+	"github.com/liuvigongzuoshi/go-kriging/internal/canvas"
 	"image"
 	"image/color"
 	"math"
@@ -23,8 +24,8 @@ type Variogram struct {
 	A      float64 `json:"A"`
 	N      int     `json:"n"`
 
-	K     []float64      `json:"K"`
-	M     []float64      `json:"M"`
+	K     []float64 `json:"K"`
+	M     []float64 `json:"M"`
 	model variogramModel
 }
 
@@ -104,7 +105,6 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	sort.Sort(distance)
 	variogram.Range = distance[(n*n-n)/2-1][0]
 
-	// TODO: Go
 	// Bin lag distance
 	var lags int
 	if ((n*n - n) / 2) > 30 {
@@ -239,14 +239,6 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 func (variogram *Variogram) Predict(x, y float64) float64 {
 	k := make([]float64, variogram.N)
 	for i := 0; i < variogram.N; i++ {
-		//k[i] = variogram.model(
-		//	math.Pow(
-		//		math.Pow(x-variogram.x[i], 2)+math.Pow(y-variogram.y[i], 2),
-		//		0.5,
-		//	),
-		//	variogram.Nugget, variogram.Range,
-		//	variogram.Sill, variogram.A,
-		//)
 		x_ := x - variogram.x[i]
 		y_ := y - variogram.y[i]
 		h := math.Sqrt(pow2(x_) + pow2(y_))
@@ -410,9 +402,40 @@ func (variogram *Variogram) Contour() {
 
 }
 
-// Plot plotting on the Canvas
-func (variogram *Variogram) Plot() {
+// Plot plotting on the canvas
+func (variogram *Variogram) Plot(grid *GridMatrices, width, height int, xlim, ylim [2]float64, colors []GridLevelColor) *canvas.Canvas {
+	// Create canvas
+	ctx := canvas.NewCanvas(width, height)
+	// Starting boundaries
+	range_ := [...]float64{xlim[1] - xlim[0], ylim[1] - ylim[0], grid.Zlim[1] - grid.Zlim[0]}
 
+	n := len(grid.Data)
+	m := len(grid.Data[0])
+	wx := math.Ceil(grid.Width * float64(width) / (xlim[1] - xlim[0]))
+	wy := math.Ceil(grid.Width * float64(height) / (ylim[1] - ylim[0]))
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < m; j++ {
+			if grid.Data[i][j] == 0 {
+				continue
+			} else {
+				x := float64(width) * (float64(i)*grid.Width + grid.Xlim[0] - xlim[0]) / range_[0]
+				y := float64(height) * (1 - (float64(j)*grid.Width+grid.Ylim[0]-ylim[0])/range_[1])
+				z := (grid.Data[i][j] - grid.Zlim[0]) / range_[2]
+				if z < 0 {
+					z = 0.0
+				} else if z > 1 {
+					z = 1.0
+				}
+
+				colorIndex := int(math.Floor((float64(len(colors)) - 1) * z))
+				color := colors[colorIndex].Color
+				ctx.DrawRect(math.Round(x-wx/2), math.Round(y-wy/2), wx, wy, color)
+			}
+		}
+	}
+
+	return ctx
 }
 
 // GeneratePngGrid
