@@ -5,11 +5,12 @@
 package ordinary
 
 import (
-	"github.com/liuvigongzuoshi/go-kriging/internal/canvas"
 	"image"
 	"image/color"
 	"math"
 	"sort"
+
+	"github.com/liuvigongzuoshi/go-kriging/internal/canvas"
 )
 
 // Variogram ordinary kriging variogram
@@ -34,10 +35,6 @@ func NewOrdinary(t, x, y []float64) *Variogram {
 }
 
 type variogramModel func(float64, float64, float64, float64, float64) float64
-
-//type VariogramModel interface {
-//	model(float64, float64, float64, float64, float64) float64
-//}
 
 // krigingVariogramGaussian gaussian variogram models
 func krigingVariogramGaussian(h, nugget, range_, sill, A float64) float64 {
@@ -257,6 +254,7 @@ func (variogram *Variogram) Variance(x, y float64) {
 }
 
 // Grid gridded matrices or contour paths
+// 根据 PolygonCoordinates 生成裁剪过的矩阵网格数据
 func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *GridMatrices {
 	n := len(polygon)
 	if n == 0 {
@@ -287,7 +285,6 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 	}
 
 	// Alloc for O(N^2) space
-	var xTarget, yTarget float64
 	var a, b [2]int
 	var lxlim [2]float64 // Local dimensions
 	var lylim [2]float64 // Local dimensions
@@ -324,11 +321,11 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 		a[1] = int(math.Ceil(((lxlim[1] - math.Mod(lxlim[1]-xlim[1], width)) - xlim[0]) / width))
 		b[0] = int(math.Floor(((lylim[0] - math.Mod(lylim[0]-ylim[0], width)) - ylim[0]) / width))
 		b[1] = int(math.Ceil(((lylim[1] - math.Mod(lylim[1]-ylim[1], width)) - ylim[0]) / width))
+		var xTarget, yTarget float64
 		for j := a[0]; j <= a[1]; j++ {
+			xTarget = xlim[0] + float64(j)*width
 			for k := b[0]; k <= b[1]; k++ {
-				xTarget = xlim[0] + float64(j)*width
 				yTarget = ylim[0] + float64(k)*width
-
 				if pipFloat64(polygon[i], xTarget, yTarget) {
 					A[j][k] = variogram.Predict(xTarget,
 						yTarget,
@@ -342,15 +339,51 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 		Xlim:  xlim,
 		Ylim:  ylim,
 		Zlim:  [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)},
-		Width: width, Data: A,
+		Width: width,
+		Data:  A,
 	}
 	return gridMatrices
 }
 
-// getGridInfo gridded matrices or contour paths
-func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[string]interface{} {
-	var grid []float64
+// Contour contour paths
+// 根据宽高度生成轮廓数据
+func (variogram *Variogram) Contour(xWidth, yWidth int) *ContourRectangle {
+	xlim := [2]float64{minFloat64(variogram.x), maxFloat64(variogram.x)}
+	ylim := [2]float64{minFloat64(variogram.y), maxFloat64(variogram.y)}
+	zlim := [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)}
+	xl := xlim[1] - xlim[0]
+	yl := ylim[1] - ylim[0]
+	gridW := xl / float64(xWidth)
+	gridH := yl / float64(yWidth)
+	var contour []float64
 
+	var xTarget, yTarget float64
+
+	for j := 0; j < yWidth; j++ {
+		yTarget = ylim[0] + float64(j)*gridW
+		for k := 0; k < xWidth; k++ {
+			xTarget = xlim[0] + float64(k)*gridH
+			contour = append(contour, variogram.Predict(xTarget, yTarget))
+		}
+	}
+
+	contourRectangle := &ContourRectangle{
+		Contour:     contour,
+		XWidth:      xWidth,
+		YWidth:      yWidth,
+		Xlim:        xlim,
+		Ylim:        ylim,
+		Zlim:        zlim,
+		XResolution: 1,
+		YResolution: 1,
+	}
+
+	return contourRectangle
+}
+
+// ContourWithBBox contour paths
+// 根据 bbox 生成轮廓数据
+func (variogram *Variogram) ContourWithBBox(bbox [4]float64, width float64) *ContourRectangle {
 	// x方向
 	xlim := [2]float64{bbox[0], bbox[2]}
 	ylim := [2]float64{bbox[1], bbox[3]}
@@ -360,68 +393,60 @@ func (variogram *Variogram) RectangleGrid(bbox [4]float64, width float64) map[st
 	geoXWidth := xlim[1] - xlim[0]
 	geoYWidth := ylim[1] - ylim[0]
 
-	// 如果x_width设置，初始基于200计算
-	var xWidth, yWidth int
-	if width != 0 {
-		xWidth = 200
-	} else {
-		xWidth = int(math.Ceil(width))
-	}
-	//让图像的xy比例与地理的xy比例保持一致
-	yWidth = int(math.Ceil(float64(xWidth) / (geoXWidth / geoYWidth)))
+	xWidth := int(math.Ceil(width))
+	// 让图像的xy比例与地理的xy比例保持一致
+	yWidth := int(math.Ceil(float64(xWidth) / (geoXWidth / geoYWidth)))
 
-	//地理跨度/图像跨度=当前地图图上分辨率
+	// 地理跨度/图像跨度=当前地图图上分辨率
 	var xResolution = geoXWidth * 1.0 / float64(xWidth)
 	var yResolution = geoYWidth * 1.0 / float64(yWidth)
 
 	var xTarget, yTarget float64
+	var contour []float64
 
 	for j := 0; j < yWidth; j++ {
+		yTarget = bbox[1] + float64(j)*yResolution
 		for k := 0; k < xWidth; k++ {
 			xTarget = bbox[0] + float64(k)*xResolution
-			yTarget = bbox[1] + float64(j)*yResolution
-			grid = append(grid, variogram.Predict(xTarget, yTarget))
+			contour = append(contour, variogram.Predict(xTarget, yTarget))
 		}
 	}
-	gridDate := map[string]interface{}{
-		"grid":        grid,
-		"N":           xWidth,
-		"m":           yWidth,
-		"Xlim":        xlim,
-		"Ylim":        ylim,
-		"Zlim":        zlim,
-		"xResolution": xResolution,
-		"yResolution": yResolution,
+	contourRectangle := &ContourRectangle{
+		Contour:     contour,
+		XWidth:      xWidth,
+		YWidth:      yWidth,
+		Xlim:        xlim,
+		Ylim:        ylim,
+		Zlim:        zlim,
+		XResolution: xResolution,
+		YResolution: yResolution,
 	}
 
-	return gridDate
-
-}
-
-func (variogram *Variogram) Contour() {
-
+	return contourRectangle
 }
 
 // Plot plotting on the canvas
-func (variogram *Variogram) Plot(grid *GridMatrices, width, height int, xlim, ylim [2]float64, colors []GridLevelColor) *canvas.Canvas {
+// 绘制裁剪过的矩阵网格数据到 canvas 上
+func (variogram *Variogram) Plot(gridMatrices *GridMatrices, width, height int, xlim, ylim [2]float64, colors []GridLevelColor) *canvas.Canvas {
 	// Create canvas
 	ctx := canvas.NewCanvas(width, height)
 	// Starting boundaries
-	range_ := [...]float64{xlim[1] - xlim[0], ylim[1] - ylim[0], grid.Zlim[1] - grid.Zlim[0]}
+	range_ := [...]float64{xlim[1] - xlim[0], ylim[1] - ylim[0], gridMatrices.Zlim[1] - gridMatrices.Zlim[0]}
 
-	n := len(grid.Data)
-	m := len(grid.Data[0])
-	wx := math.Ceil(grid.Width * float64(width) / (xlim[1] - xlim[0]))
-	wy := math.Ceil(grid.Width * float64(height) / (ylim[1] - ylim[0]))
+	n := len(gridMatrices.Data)
+	m := len(gridMatrices.Data[0])
+	// 计算色块宽高度
+	wx := math.Ceil(gridMatrices.Width * float64(width) / (xlim[1] - xlim[0]))
+	wy := math.Ceil(gridMatrices.Width * float64(height) / (ylim[1] - ylim[0]))
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < m; j++ {
-			if grid.Data[i][j] == 0 {
+			if gridMatrices.Data[i][j] == 0 {
 				continue
 			} else {
-				x := float64(width) * (float64(i)*grid.Width + grid.Xlim[0] - xlim[0]) / range_[0]
-				y := float64(height) * (1 - (float64(j)*grid.Width+grid.Ylim[0]-ylim[0])/range_[1])
-				z := (grid.Data[i][j] - grid.Zlim[0]) / range_[2]
+				x := float64(width) * (float64(i)*gridMatrices.Width + gridMatrices.Xlim[0] - xlim[0]) / range_[0]
+				y := float64(height) * (1 - (float64(j)*gridMatrices.Width+gridMatrices.Ylim[0]-ylim[0])/range_[1])
+				z := (gridMatrices.Data[i][j] - gridMatrices.Zlim[0]) / range_[2]
 				if z < 0 {
 					z = 0.0
 				} else if z > 1 {
@@ -438,61 +463,73 @@ func (variogram *Variogram) Plot(grid *GridMatrices, width, height int, xlim, yl
 	return ctx
 }
 
-// GeneratePngGrid
-func (variogram *Variogram) GeneratePngGrid(xWidth, yWidth int) ([]float64, float64, float64) {
-	rangeMaxX := maxFloat64(variogram.x)
-	rangeMinX := minFloat64(variogram.x)
-	rangeMaxY := maxFloat64(variogram.y)
-	rangeMinY := minFloat64(variogram.y)
-	rangeMaxT := maxFloat64(variogram.t)
-	rangeMinT := minFloat64(variogram.t)
-	colorperiod := (rangeMaxT - rangeMinT) / 5
-	var xl = rangeMaxX - rangeMinX
-	var yl = rangeMaxY - rangeMinY
-	var gridX = xl / float64(xWidth)
-	var gridY = yl / float64(yWidth)
-	var gridPoint [][2]float64
-	var krigingValue []float64
-	var gX = rangeMinX
+// PlotRectangleGrid
+// 绘制矩形网格到数据 canvas 上
+func (variogram *Variogram) PlotRectangleContour(contourRectangle *ContourRectangle, width, height int, xlim, ylim [2]float64, colors []color.Color) *canvas.Canvas {
+	// Create canvas
+	ctx := canvas.NewCanvas(width, height)
+	// Starting boundaries
+	range_ := [...]float64{xlim[1] - xlim[0], ylim[1] - ylim[0], contourRectangle.Zlim[1] - contourRectangle.Zlim[0]}
+	n := contourRectangle.XWidth
+	m := contourRectangle.YWidth
+	// 计算色块宽高度
+	wx := math.Ceil(contourRectangle.XResolution * float64(width) / (xlim[1] - xlim[0]))
+	wy := math.Ceil(contourRectangle.YResolution * float64(height) / (ylim[1] - ylim[0]))
 
-	for i := 0; i < xWidth; i++ {
-		gX = gX + gridX
-		gY := rangeMinY
-		for j := 0; j < yWidth; j++ {
-			gY = gY + gridY
-			var pp = [2]float64{gX, gY}
-			krigingValue = append(krigingValue, variogram.Predict(gX, gY))
-			gridPoint = append(gridPoint, pp)
+	for i := 0; i < m; i++ {
+		for j := 0; j < n; j++ {
+			index := i*n + j
+			if contourRectangle.Contour[index] == 0 {
+				continue
+			} else {
+				x := (float64(width) * (float64(j)*contourRectangle.XResolution + contourRectangle.Xlim[0] - xlim[0])) / range_[0]
+				y := float64(height) * (1 - (float64(i)*contourRectangle.YResolution+contourRectangle.Ylim[0]-ylim[0])/range_[1])
+				z := (contourRectangle.Contour[index] - contourRectangle.Zlim[0]) / range_[2]
+				if z < 0 {
+					z = 0.0
+				} else if z > 1 {
+					z = 1.0
+				}
+
+				colorIndex := int(math.Floor((float64(len(colors)) - 1) * z))
+				color := colors[colorIndex]
+				ctx.DrawRect(math.Round(x-wx/2), math.Round(y-wy/2), wx, wy, color)
+			}
 		}
 	}
 
-	return krigingValue, rangeMaxT, colorperiod
+	return ctx
 }
 
-// GeneratePng
-func (variogram *Variogram) GeneratePng(krigingValue []float64, rangeMaxPM float64, colorperiod float64, xWidth, yWidth int) *image.RGBA {
+// PlotPng
+func (variogram *Variogram) PlotPng(rectangleGrids *ContourRectangle) *image.RGBA {
+	contour := rectangleGrids.Contour
+	xWidth := rectangleGrids.XWidth
+	yWidth := rectangleGrids.YWidth
+	zlim := rectangleGrids.Zlim
+	colorperiod := (zlim[1] - zlim[0]) / 5
 	img := image.NewRGBA(image.Rect(0, 0, xWidth, yWidth))
 
 	for i := 0; i < xWidth*yWidth; i++ {
-		zi := krigingValue[i]
+		zi := contour[i]
 		var color color.RGBA
 
-		if zi <= rangeMaxPM && zi > rangeMaxPM-colorperiod {
+		if zi <= zlim[1] && zi > zlim[1]-colorperiod {
 			color.R = 189
 			color.G = 0
 			color.B = 36
 			color.A = 128
-		} else if zi <= rangeMaxPM-colorperiod && zi > rangeMaxPM-2*colorperiod {
+		} else if zi <= zlim[1]-colorperiod && zi > zlim[1]-2*colorperiod {
 			color.R = 240
 			color.G = 59
 			color.B = 32
 			color.A = 128
-		} else if zi <= rangeMaxPM-2*colorperiod && zi > rangeMaxPM-3*colorperiod {
+		} else if zi <= zlim[1]-2*colorperiod && zi > zlim[1]-3*colorperiod {
 			color.R = 253
 			color.G = 141
 			color.B = 60
 			color.A = 128
-		} else if zi <= rangeMaxPM-3*colorperiod && zi > rangeMaxPM-4*colorperiod {
+		} else if zi <= zlim[1]-3*colorperiod && zi > zlim[1]-4*colorperiod {
 			color.R = 254
 			color.G = 204
 			color.B = 92

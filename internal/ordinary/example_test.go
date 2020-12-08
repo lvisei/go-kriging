@@ -2,6 +2,7 @@ package ordinary_test
 
 import (
 	"fmt"
+
 	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 )
 
@@ -38,29 +39,29 @@ func (t FloatList) max() float64 {
 func Example_OrdinaryKriging_Exponential() {
 	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
-	krigingValue, _, _ := ordinaryKriging.GeneratePngGrid(200, 200)
-	fmt.Printf("%#v", krigingValue[:10])
+	contourRectangle := ordinaryKriging.Contour(200, 200)
+	fmt.Printf("%#v", contourRectangle.Contour[:10])
 	// Output:
-	// []float64{31.832037963867943, 32.2958798424233, 32.83227510797089, 33.38759955944839, 33.946936215772, 34.50483331478148, 35.05891641620112, 35.60803760024491, 36.15161335849867, 36.68934894716563}
+	// []float64{31.062802427638875, 31.674435068380763, 32.278056119942775, 32.873804573541605, 33.461820447530116, 34.04224482718795, 34.615219901523936, 35.18088899653787, 35.73939660436959, 36.29088840795853}
 
 }
 
 func Example_OrdinaryKriging_Spherical() {
 	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Spherical, 0, 100)
-	krigingValue, _, _ := ordinaryKriging.GeneratePngGrid(200, 200)
-	fmt.Printf("%#v", krigingValue[:10])
+	contourRectangle := ordinaryKriging.Contour(200, 200)
+	fmt.Printf("%#v", contourRectangle.Contour[:10])
 	// Output:
-	// []float64{31.42123794010535, 31.644499557807247, 31.90817908629488, 32.185341522126315, 32.46845610328156, 32.75473696943352, 33.042940816984725, 33.33243905472105, 33.622885866814954, 33.91408001569965}
+	// []float64{31.062802427638914, 31.355686136987902, 31.64907050717433, 31.94263698074654, 32.23631166433025, 32.5301127079549, 32.82405871070649, 33.11816872323253, 33.41246224930141, 33.70695924637675}
 
 }
 
 func Example_OrdinaryKriging_Gaussian() {
 	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Gaussian, 0, 100)
-	krigingValue, _, _ := ordinaryKriging.GeneratePngGrid(200, 200)
-	fmt.Printf("%#v", krigingValue[:10])
+	contourRectangle := ordinaryKriging.Contour(200, 200)
+	fmt.Printf("%#v", contourRectangle.Contour[:10])
 	// Output:
-	// []float64{31.3237814741247, 31.456757078398557, 31.593073987805035, 31.73269631764414, 31.875587884114843, 32.02171222008403, 32.17103259071844, 32.32351200912366, 32.47911325177369, 32.63779887397147}
+	// []float64{31.062802429121923, 31.194182744748254, 31.328955440993354, 31.467084512481577, 31.60853363388739, 31.75326617591121, 31.90124522123483, 32.05243358038846, 32.206793807474796, 32.36428821590181}
 
 }

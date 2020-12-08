@@ -36,8 +36,6 @@ func main() {
 		//memProfile.Close()
 	}()
 
-	//var wg sync.WaitGroup
-	//wg.Add(1)
 	data, err := readCsvFile("examples/csv/data/2045.csv")
 	if err != nil {
 		log.Fatal(err)
@@ -50,51 +48,27 @@ func main() {
 
 	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["lons"], data["lats"])
 	_ = ordinaryKriging.Train(ordinary.Spherical, 0, 100)
-	//writeFile("variogram.json", variogram)
 
+	gridPlot(ordinaryKriging, polygon)
+
+	//var wg sync.WaitGroup
+	//wg.Add(1)
 	//go func() {
 	//	defer wg.Done()
-	//	generateGridData(ordinaryKriging, polygon)
+	//	gridPlot(ordinaryKriging, polygon)
 	//}()
-	generateGridData(ordinaryKriging, polygon)
-
 	//go func() {
 	//	defer wg.Done()
-	//	generatePng(ordinaryKriging)
+	//	contourRectanglePng(ordinaryKriging)
 	//}()
 
 	//wg.Wait()
 }
 
-func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoordinates) {
-	defer timeCost()("插值生成成功图片耗时")
+func gridPlot(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoordinates) {
+	defer timeCost()("插值生成网格图片耗时")
 	gridMatrices := ordinaryKriging.Grid(polygon, 0.01)
-	//colors := []color.RGBA{
-	//	color.RGBA{R: 52, G: 146, B: 199, A: 255},
-	//	color.RGBA{R: 104, G: 166, B: 179, A: 255},
-	//	color.RGBA{R: 149, G: 189, B: 158, A: 255},
-	//	color.RGBA{R: 191, G: 212, B: 138, A: 255},
-	//	color.RGBA{R: 231, G: 237, B: 114, A: 255},
-	//	color.RGBA{R: 250, G: 228, B: 90, A: 255},
-	//	color.RGBA{R: 248, G: 179, B: 68, A: 255},
-	//	color.RGBA{R: 247, G: 133, B: 50, A: 255},
-	//	color.RGBA{R: 242, G: 86, B: 34, A: 255},
-	//	color.RGBA{R: 232, G: 21, B: 19, A: 255},
-	//}
-
-	colors := []ordinary.GridLevelColor{
-		ordinary.GridLevelColor{Color: ordinary.RGBA{40, 146, 199, 255}, Value: [2]float64{-30, -15}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{96, 163, 181, 255}, Value: [2]float64{-15, -10}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{140, 184, 164, 255}, Value: [2]float64{-10, -5}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{177, 204, 145, 255}, Value: [2]float64{-5, 0}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{215, 227, 125, 255}, Value: [2]float64{0, 5}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{250, 250, 100, 255}, Value: [2]float64{5, 10}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{252, 207, 81, 255}, Value: [2]float64{10, 15}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{252, 164, 63, 255}, Value: [2]float64{15, 20}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{242, 77, 31, 255}, Value: [2]float64{25, 30}},
-		ordinary.GridLevelColor{Color: ordinary.RGBA{232, 16, 20, 255}, Value: [2]float64{30, 40}},
-	}
-	ctx := ordinaryKriging.Plot(gridMatrices, 500, 500, gridMatrices.Xlim, gridMatrices.Ylim, colors)
+	ctx := ordinaryKriging.Plot(gridMatrices, 500, 500, gridMatrices.Xlim, gridMatrices.Ylim, ordinary.DefaultGridLevelColor)
 
 	subTitle := &canvas.TextConfig{
 		Text:     "球面半变异函数模型",
@@ -109,7 +83,6 @@ func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Poly
 		log.Fatalf("DrawText %v", err)
 	}
 
-	//writeFile("gridMatrices.json", gridMatrices)
 	buffer, err := ctx.Output()
 	if err != nil {
 		log.Fatal(err)
@@ -117,14 +90,17 @@ func generateGridData(ordinaryKriging *ordinary.Variogram, polygon ordinary.Poly
 		saveBuffer("grid.png", buffer)
 	}
 
+	//writeFile("gridMatrices.json", gridMatrices)
 }
 
-func generatePng(ordinaryKriging *ordinary.Variogram) {
-	defer timeCost()("生成插值图片耗时")
+func contourRectanglePng(ordinaryKriging *ordinary.Variogram) {
+	defer timeCost()("插值生成矩形图片耗时")
 	xWidth, yWidth := 800, 800
-	krigingValue, rangeMaxPM, colorperiod := ordinaryKriging.GeneratePngGrid(xWidth, yWidth)
+	contourRectangle := ordinaryKriging.Contour(xWidth, yWidth)
 	pngPath := fmt.Sprintf("%v/%v.png", dirPath, time.Now().Format("2006-01-02 15:04:05"))
-	img := ordinaryKriging.GeneratePng(krigingValue, rangeMaxPM, colorperiod, xWidth, yWidth)
+	ctx := ordinaryKriging.PlotRectangleContour(contourRectangle, 500, 500, contourRectangle.Xlim, contourRectangle.Ylim, ordinary.DefaultLegendColor)
+	img := ordinaryKriging.PlotPng(contourRectangle)
+
 	err := os.MkdirAll(filepath.Dir(pngPath), os.ModePerm)
 	if err != nil {
 		return
@@ -135,14 +111,17 @@ func generatePng(ordinaryKriging *ordinary.Variogram) {
 	}
 	defer file.Close()
 	png.Encode(file, img)
+
+	buffer, err := ctx.Output()
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		saveBuffer("rectangle.png", buffer)
+	}
 }
 
-func generateRectangleGrid() {
-	//bound := polygon.Bound()
-	//bbox := [4]float64{bound.Min.Lat(), bound.Min.Lon(), bound.Max.Lat(), bound.Max.Lon()}
-	//gridDate := ordinaryKriging.RectangleGrid(bbox, 0.01)
-	//writeFile("gridDate.json", gridDate)
-
+func ContourWithBBoxPng(bbox [4]float64) {
+	//contourRectangle := ordinaryKriging.ContourWithBBox(bbox, 0.01)
 }
 
 func readCsvFile(filePath string) (map[string][]float64, error) {

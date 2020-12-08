@@ -2,13 +2,14 @@ package ordinary_test
 
 import (
 	"fmt"
-	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 	"image/png"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
 )
 
 const pngDirPath = "testdata"
@@ -48,7 +49,7 @@ func TestPredict(t *testing.T) {
 	values, lats, lons := generateData(100)
 	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
-	ordinaryKriging.GeneratePngGrid(200, 2000)
+	ordinaryKriging.Contour(200, 2000)
 }
 
 func TestOrdinaryKriging(t *testing.T) {
@@ -57,10 +58,9 @@ func TestOrdinaryKriging(t *testing.T) {
 	ordinaryKriging := ordinary.NewOrdinary(values, lats, lons)
 	ordinaryKriging.Train(ordinary.Exponential, 0, 100)
 
-	xWidth, yWidth := 500, 500
-	krigingValue, rangeMaxPM, colorperiod := ordinaryKriging.GeneratePngGrid(xWidth, yWidth)
+	contourRectangle := ordinaryKriging.Contour(500, 500)
 	pngPath := fmt.Sprintf("%v/%v.png", pngDirPath, time.Now().Format("2006-01-02 15:04:05"))
-	img := ordinaryKriging.GeneratePng(krigingValue, rangeMaxPM, colorperiod, xWidth, yWidth)
+	img := ordinaryKriging.PlotPng(contourRectangle)
 
 	err := os.MkdirAll(filepath.Dir(pngPath), os.ModePerm)
 	if err != nil {
