@@ -14,8 +14,8 @@ import (
 
 	"runtime/pprof"
 
-	"github.com/liuvigongzuoshi/go-kriging/internal/canvas"
-	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
+	"github.com/liuvigongzuoshi/go-kriging/canvas"
+	"github.com/liuvigongzuoshi/go-kriging/ordinary"
 	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
 )
 
@@ -46,7 +46,7 @@ func main() {
 	}
 	defer timeCost()("训练模型加插值总耗时")
 
-	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["lons"], data["lats"])
+	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["x"], data["y"])
 	_ = ordinaryKriging.Train(ordinary.Spherical, 0, 100)
 
 	gridPlot(ordinaryKriging, polygon)
@@ -72,7 +72,7 @@ func gridPlot(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoord
 
 	subTitle := &canvas.TextConfig{
 		Text:     "球面半变异函数模型",
-		FontName: "data/fonts/source-han-sans-sc/regular.ttf",
+		FontName: "testdata/fonts/source-han-sans-sc/regular.ttf",
 		FontSize: 28,
 		Color:    color.RGBA{R: 0, G: 0, B: 0, A: 255},
 		OffsetX:  252,
@@ -156,7 +156,7 @@ func readCsvFile(filePath string) (map[string][]float64, error) {
 		values = append(values, value)
 	}
 
-	data := map[string][]float64{"values": values, "lats": lats, "lons": lons}
+	data := map[string][]float64{"values": values, "x": lons, "y": lats}
 
 	//fmt.Printf("values %#v\n lons %#v\n lats %#v\n", values, lons, lats)
 

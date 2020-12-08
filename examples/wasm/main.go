@@ -7,7 +7,7 @@ import (
 
 	"syscall/js"
 
-	"github.com/liuvigongzuoshi/go-kriging/internal/ordinary"
+	"github.com/liuvigongzuoshi/go-kriging/ordinary"
 )
 
 func main() {
