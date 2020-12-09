@@ -72,11 +72,15 @@ type ContourRectangle struct {
 	YResolution float64    `json:"yResolution"`
 }
 
-type PolygonCoordinates [][][2]float64
+type Point [2]float64 // [103.614373, 27.00541]
+
+type Ring []Point // [[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]
+
+type PolygonCoordinates []Ring // [[[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]]
 
 type PolygonGeometry struct {
-	Type        string             `json:"type" example:"Polygon"`                                                                                                  // Polygon
-	Coordinates PolygonCoordinates `json:"coordinates" example:"[[[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]]"` // coordinates
+	Type        string `json:"type" example:"Polygon"` // Polygon
+	Coordinates []Ring `json:"coordinates,omitempty"`  // coordinates
 }
 
 type RGBA [4]uint8
