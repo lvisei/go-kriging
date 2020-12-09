@@ -98,6 +98,6 @@ func (c RGBA) RGBA() (r, g, b, a uint32) {
 }
 
 type GridLevelColor struct {
-	Value [2]float64 `json:"value" example:"0, 5"`               // [0, 5]
-	Color RGBA       `json:"color" example:"255, 255, 255, 255"` // [255, 255, 255, 255]
+	Value [2]float64 `json:"value" example:"0, 5"` // [0, 5]
+	Color RGBA       `json:"color"`                // [255, 255, 255, 255]
 }
