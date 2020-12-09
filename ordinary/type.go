@@ -12,28 +12,28 @@ const (
 
 var (
 	DefaultLegendColor = []color.Color{
-		RGBA{40, 146, 199, 255},
-		RGBA{96, 163, 181, 255},
-		RGBA{140, 184, 164, 255},
-		RGBA{177, 204, 145, 255},
-		RGBA{215, 227, 125, 255},
-		RGBA{250, 250, 100, 255},
-		RGBA{252, 207, 81, 255},
-		RGBA{252, 164, 63, 255},
-		RGBA{242, 77, 31, 255},
-		RGBA{232, 16, 20, 255},
+		NewRGBA(40, 146, 199, 255),
+		NewRGBA(96, 163, 181, 255),
+		NewRGBA(140, 184, 164, 255),
+		NewRGBA(177, 204, 145, 255),
+		NewRGBA(215, 227, 125, 255),
+		NewRGBA(250, 250, 100, 255),
+		NewRGBA(252, 207, 81, 255),
+		NewRGBA(252, 164, 63, 255),
+		NewRGBA(242, 77, 31, 255),
+		NewRGBA(232, 16, 20, 255),
 	}
 	DefaultGridLevelColor = []GridLevelColor{
-		{Color: RGBA{40, 146, 199, 255}, Value: [2]float64{-30, -15}},
-		{Color: RGBA{96, 163, 181, 255}, Value: [2]float64{-15, -10}},
-		{Color: RGBA{140, 184, 164, 255}, Value: [2]float64{-10, -5}},
-		{Color: RGBA{177, 204, 145, 255}, Value: [2]float64{-5, 0}},
-		{Color: RGBA{215, 227, 125, 255}, Value: [2]float64{0, 5}},
-		{Color: RGBA{250, 250, 100, 255}, Value: [2]float64{5, 10}},
-		{Color: RGBA{252, 207, 81, 255}, Value: [2]float64{10, 15}},
-		{Color: RGBA{252, 164, 63, 255}, Value: [2]float64{15, 20}},
-		{Color: RGBA{242, 77, 31, 255}, Value: [2]float64{25, 30}},
-		{Color: RGBA{232, 16, 20, 255}, Value: [2]float64{30, 40}},
+		{Color: NewRGBA(40, 146, 199, 255), Value: [2]float64{-30, -15}},
+		{Color: NewRGBA(96, 163, 181, 255), Value: [2]float64{-15, -10}},
+		{Color: NewRGBA(140, 184, 164, 255), Value: [2]float64{-10, -5}},
+		{Color: NewRGBA(177, 204, 145, 255), Value: [2]float64{-5, 0}},
+		{Color: NewRGBA(215, 227, 125, 255), Value: [2]float64{0, 5}},
+		{Color: NewRGBA(250, 250, 100, 255), Value: [2]float64{5, 10}},
+		{Color: NewRGBA(252, 207, 81, 255), Value: [2]float64{10, 15}},
+		{Color: NewRGBA(252, 164, 63, 255), Value: [2]float64{15, 20}},
+		{Color: NewRGBA(242, 77, 31, 255), Value: [2]float64{25, 30}},
+		{Color: NewRGBA(232, 16, 20, 255), Value: [2]float64{30, 40}},
 	}
 )
 
@@ -83,21 +83,12 @@ type PolygonGeometry struct {
 	Coordinates []Ring `json:"coordinates,omitempty"`  // coordinates
 }
 
-type RGBA [4]uint8
-
-func (c RGBA) RGBA() (r, g, b, a uint32) {
-	r = uint32(c[0])
-	r |= r << 8
-	g = uint32(c[1])
-	g |= g << 8
-	b = uint32(c[2])
-	b |= b << 8
-	a = uint32(c[3])
-	a |= a << 8
-	return
+func NewRGBA(r, g, b, a uint8) color.RGBA {
+	_rgba := color.RGBA{R: r, G: g, B: b, A: a}
+	return _rgba
 }
 
 type GridLevelColor struct {
-	Value [2]float64 `json:"value" example:"0, 5"` // [0, 5]
-	Color RGBA       `json:"color"`                // [255, 255, 255, 255]
+	Value [2]float64 `json:"value" example:"0,5"` // [0, 5]
+	Color color.RGBA `json:"color"`               // {255, 255, 255, 255}
 }
