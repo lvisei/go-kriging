@@ -446,14 +446,24 @@ func (variogram *Variogram) Plot(gridMatrices *GridMatrices, width, height int, 
 			} else {
 				x := float64(width) * (float64(i)*gridMatrices.Width + gridMatrices.Xlim[0] - xlim[0]) / range_[0]
 				y := float64(height) * (1 - (float64(j)*gridMatrices.Width+gridMatrices.Ylim[0]-ylim[0])/range_[1])
-				z := (gridMatrices.Data[i][j] - gridMatrices.Zlim[0]) / range_[2]
+				distance := gridMatrices.Data[i][j] - gridMatrices.Zlim[0]
+				z := (distance) / range_[2]
 				if z < 0 {
 					z = 0.0
 				} else if z > 1 {
 					z = 1.0
 				}
 
-				colorIndex := int(math.Floor((float64(len(colors)) - 1) * z))
+				colorIndex := -1
+				for index, item := range colors {
+					if distance >= item.Value[0] && distance <= item.Value[1] {
+						colorIndex = index
+						break
+					}
+				}
+				if colorIndex == -1 {
+					continue
+				}
 				color := colors[colorIndex].Color
 				ctx.DrawRect(math.Round(x-wx/2), math.Round(y-wy/2), wx, wy, color)
 			}

@@ -32,6 +32,7 @@ var (
 		{Color: NewRGBA(250, 250, 100, 255), Value: [2]float64{5, 10}},
 		{Color: NewRGBA(252, 207, 81, 255), Value: [2]float64{10, 15}},
 		{Color: NewRGBA(252, 164, 63, 255), Value: [2]float64{15, 20}},
+		{Color: NewRGBA(247, 122, 45, 255), Value: [2]float64{20, 25}},
 		{Color: NewRGBA(242, 77, 31, 255), Value: [2]float64{25, 30}},
 		{Color: NewRGBA(232, 16, 20, 255), Value: [2]float64{30, 40}},
 	}
@@ -72,14 +73,14 @@ type ContourRectangle struct {
 	YResolution float64    `json:"yResolution"`
 }
 
-type Point [2]float64 // [103.614373, 27.00541]
+type Point [2]float64 // example [103.614373, 27.00541]
 
-type Ring []Point // [[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]
+type Ring []Point
 
-type PolygonCoordinates []Ring // [[[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]]
+type PolygonCoordinates []Ring
 
 type PolygonGeometry struct {
-	Type        string `json:"type" example:"Polygon"` // Polygon
+	Type        string `json:"type" default:"Polygon"` // Polygon
 	Coordinates []Ring `json:"coordinates,omitempty"`  // coordinates
 }
 
@@ -89,6 +90,6 @@ func NewRGBA(r, g, b, a uint8) color.RGBA {
 }
 
 type GridLevelColor struct {
-	Value [2]float64 `json:"value" example:"0,5"` // [0, 5]
-	Color color.RGBA `json:"color"`               // {255, 255, 255, 255}
+	Value [2]float64 `json:"value"` // 值区间 [0, 5]
+	Color color.RGBA `json:"color"` // RGBA颜色 {255, 255, 255, 255}
 }
