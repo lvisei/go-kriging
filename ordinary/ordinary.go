@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"math"
 	"sort"
+	"sync"
 
 	"github.com/liuvigongzuoshi/go-kriging/canvas"
 )
@@ -255,6 +256,8 @@ func (variogram *Variogram) Variance(x, y float64) {
 
 // Grid gridded matrices or contour paths
 // 根据 PolygonCoordinates 生成裁剪过的矩阵网格数据
+// 这里 polygon 是一个三维数组，可以变相的支持的多个面，但不符合 Polygon 规范
+// PolygonCoordinates [[[x,y]],[[x,y]]] 两个面
 func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *GridMatrices {
 	n := len(polygon)
 	if n == 0 {
@@ -285,9 +288,6 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 	}
 
 	// Alloc for O(N^2) space
-	var a, b [2]int
-	var lxlim [2]float64 // Local dimensions
-	var lylim [2]float64 // Local dimensions
 	x := int(math.Ceil((xlim[1] - xlim[0]) / width))
 	y := int(math.Ceil((ylim[1] - ylim[0]) / width))
 
@@ -295,43 +295,73 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 	for i := 0; i <= x; i++ {
 		A[i] = make([]float64, y+1)
 	}
+
 	for i := 0; i < n; i++ {
-		// Range for polygon[i]
-		lxlim[0] = polygon[i][0][0]
+		currentPolygon := polygon[i]
+		var lxlim [2]float64 // Local dimensions
+		var lylim [2]float64 // Local dimensions
+		// Range for currentPolygon
+		lxlim[0] = currentPolygon[0][0]
 		lxlim[1] = lxlim[0]
-		lylim[0] = polygon[i][0][1]
+		lylim[0] = currentPolygon[0][1]
 		lylim[1] = lylim[0]
-		for j := 1; j < len(polygon[i]); j++ { // Vertices
-			if polygon[i][j][0] < lxlim[0] {
-				lxlim[0] = polygon[i][j][0]
+		for j := 1; j < len(currentPolygon); j++ { // Vertices
+			if currentPolygon[j][0] < lxlim[0] {
+				lxlim[0] = currentPolygon[j][0]
 			}
-			if polygon[i][j][0] > lxlim[1] {
-				lxlim[1] = polygon[i][j][0]
+			if currentPolygon[j][0] > lxlim[1] {
+				lxlim[1] = currentPolygon[j][0]
 			}
-			if polygon[i][j][1] < lylim[0] {
-				lylim[0] = polygon[i][j][1]
+			if currentPolygon[j][1] < lylim[0] {
+				lylim[0] = currentPolygon[j][1]
 			}
-			if polygon[i][j][1] > lylim[1] {
-				lylim[1] = polygon[i][j][1]
+			if currentPolygon[j][1] > lylim[1] {
+				lylim[1] = currentPolygon[j][1]
 			}
 		}
 
+		var a, b [2]int
 		// Loop through polygon subspace
 		a[0] = int(math.Floor(((lxlim[0] - math.Mod(lxlim[0]-xlim[0], width)) - xlim[0]) / width))
 		a[1] = int(math.Ceil(((lxlim[1] - math.Mod(lxlim[1]-xlim[1], width)) - xlim[0]) / width))
 		b[0] = int(math.Floor(((lylim[0] - math.Mod(lylim[0]-ylim[0], width)) - ylim[0]) / width))
 		b[1] = int(math.Ceil(((lylim[1] - math.Mod(lylim[1]-ylim[1], width)) - ylim[0]) / width))
+
+		var wg sync.WaitGroup
+		predictCh := make(chan *PredictDate, (b[1]-b[0])*(a[1]-a[0]))
+		var parallel = func(j, k int, polygon []Point, xTarget, yTarget float64) {
+			predictDate := &PredictDate{X: j, Y: k}
+			if pipFloat64(polygon, xTarget, yTarget) {
+				predictDate.Value = variogram.Predict(xTarget,
+					yTarget,
+				)
+				predictCh <- predictDate
+			}
+			defer wg.Done()
+		}
+
 		var xTarget, yTarget float64
 		for j := a[0]; j <= a[1]; j++ {
 			xTarget = xlim[0] + float64(j)*width
 			for k := b[0]; k <= b[1]; k++ {
 				yTarget = ylim[0] + float64(k)*width
-				if pipFloat64(polygon[i], xTarget, yTarget) {
-					A[j][k] = variogram.Predict(xTarget,
-						yTarget,
-					)
-				}
+				wg.Add(1)
+				go parallel(j, k, currentPolygon, xTarget, yTarget)
 			}
+		}
+
+		go func() {
+			wg.Wait()
+			close(predictCh)
+		}()
+
+		for predictDate := range predictCh {
+			if predictDate.Value != 0 {
+				j := predictDate.X
+				k := predictDate.Y
+				A[j][k] = predictDate.Value
+			}
+
 		}
 	}
 

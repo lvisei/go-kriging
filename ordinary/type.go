@@ -93,3 +93,9 @@ type GridLevelColor struct {
 	Value [2]float64 `json:"value"` // 值区间 [0, 5]
 	Color color.RGBA `json:"color"` // RGBA颜色 {255, 255, 255, 255}
 }
+
+type PredictDate struct {
+	X     int
+	Y     int
+	Value float64
+}

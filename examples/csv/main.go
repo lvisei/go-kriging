@@ -159,6 +159,7 @@ func readCsvFile(filePath string) (map[string][]float64, error) {
 	data := map[string][]float64{"values": values, "x": lons, "y": lats}
 
 	//fmt.Printf("values %#v\n lons %#v\n lats %#v\n", values, lons, lats)
+	// writeFile("data.json", data)
 
 	return data, nil
 }
