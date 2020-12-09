@@ -75,8 +75,8 @@ type ContourRectangle struct {
 type PolygonCoordinates [][][2]float64
 
 type PolygonGeometry struct {
-	Type        string             `json:"type"`                  // Polygon
-	Coordinates PolygonCoordinates `json:"coordinates,omitempty"` // coordinates
+	Type        string             `json:"type" example:"Polygon"`                                                                                                  // Polygon
+	Coordinates PolygonCoordinates `json:"coordinates" example:"[[[103.614373, 27.00541],[104.174357, 26.635252],[104.356163, 28.018448],[103.614373, 27.00541]]]"` // coordinates
 }
 
 type RGBA [4]uint8
@@ -94,6 +94,6 @@ func (c RGBA) RGBA() (r, g, b, a uint32) {
 }
 
 type GridLevelColor struct {
-	Value [2]float64 `json:"value"` // [0, 5]
-	Color RGBA       `json:"color"` // [255, 255, 255, 255]
+	Value [2]float64 `json:"value" example:"0, 5"`               // [0, 5]
+	Color RGBA       `json:"color" example:"255, 255, 255, 255"` // [255, 255, 255, 255]
 }
