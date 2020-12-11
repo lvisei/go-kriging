@@ -5,13 +5,12 @@
 package ordinary
 
 import (
+	"github.com/liuvigongzuoshi/go-kriging/canvas"
 	"image"
 	"image/color"
 	"math"
 	"sort"
 	"sync"
-
-	"github.com/liuvigongzuoshi/go-kriging/canvas"
 )
 
 // Variogram ordinary kriging variogram
@@ -329,14 +328,12 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 
 		var wg sync.WaitGroup
 		predictCh := make(chan *PredictDate, (b[1]-b[0])*(a[1]-a[0]))
-		var parallel = func(j, k int, polygon []Point, xTarget, yTarget float64) {
+		var parallelPredict = func(j, k int, polygon []Point, xTarget, yTarget float64) {
 			predictDate := &PredictDate{X: j, Y: k}
-			if pipFloat64(polygon, xTarget, yTarget) {
-				predictDate.Value = variogram.Predict(xTarget,
-					yTarget,
-				)
-				predictCh <- predictDate
-			}
+			predictDate.Value = variogram.Predict(xTarget,
+				yTarget,
+			)
+			predictCh <- predictDate
 			defer wg.Done()
 		}
 
@@ -345,8 +342,16 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 			xTarget = xlim[0] + float64(j)*width
 			for k := b[0]; k <= b[1]; k++ {
 				yTarget = ylim[0] + float64(k)*width
-				wg.Add(1)
-				go parallel(j, k, currentPolygon, xTarget, yTarget)
+
+				if pipFloat64(currentPolygon, xTarget, yTarget) {
+					wg.Add(1)
+					go parallelPredict(j, k, currentPolygon, xTarget, yTarget)
+				}
+				//if pipFloat64(currentPolygon, xTarget, yTarget) {
+				//	A[j][k] = variogram.Predict(xTarget,
+				//		yTarget,
+				//	)
+				//}
 			}
 		}
 
