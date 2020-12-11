@@ -30,6 +30,8 @@ func krigingMatrixMultiply(X, Y []float64, n, m, p int) []float64 {
 	return Z
 }
 
+// krigingMatrixAdd
+// 矩阵相加
 func krigingMatrixAdd(X, Y []float64, n, m int) []float64 {
 	Z := make([]float64, n*m)
 	for i := 0; i < n; i++ {
@@ -51,6 +53,7 @@ func krigingMatrixDiag(c float64, n int) []float64 {
 }
 
 // krigingMatrixChol cholesky decomposition
+// Cholesky 分解
 func krigingMatrixChol(X []float64, n int) bool {
 	p := make([]float64, n)
 
@@ -81,6 +84,7 @@ func krigingMatrixChol(X []float64, n int) bool {
 }
 
 // krigingMatrixChol2inv inversion of cholesky decomposition
+// cholesky分解的求逆
 func krigingMatrixChol2inv(X []float64, n int) {
 	var i, j, k int
 	var sum float64
@@ -124,80 +128,83 @@ func krigingMatrixChol2inv(X []float64, n int) {
 
 // krigingMatrixSolve inversion via gauss-jordan elimination
 // 高斯-若尔当消元法
-// https://baike.baidu.com/item/%E9%AB%98%E6%96%AF-%E8%8B%A5%E5%B0%94%E5%BD%93%E6%B6%88%E5%85%83%E6%B3%95/19969775
 func krigingMatrixSolve(X []float64, n int) bool {
-	var m = n
 	var b = make([]float64, n*n)
 	var indexC = make([]int, n)
 	var indexR = make([]int, n)
 	var ipiV = make([]int, n)
-	var iCol, iRow int
+	var iCol, iRow, iRowXn, iColXn int
 	var dum, pivinv float64
 
 	for i := 0; i < n; i++ {
+		_iXn := i * n
 		for j := 0; j < n; j++ {
 			if i == j {
-				b[i*n+j] = 1
+				b[_iXn+j] = 1
 			} else {
-				b[i*n+j] = 0
+				b[_iXn+j] = 0
 			}
 		}
-	}
-
-	for j := 0; j < n; j++ {
-		ipiV[j] = 0
 	}
 
 	for i := 0; i < n; i++ {
 		var big float64 = 0
 		for j := 0; j < n; j++ {
 			if ipiV[j] != 1 {
+				_jXn := j * n
 				for k := 0; k < n; k++ {
 					if ipiV[k] == 0 {
-						absoluteValue := math.Abs(X[j*n+k])
+						absoluteValue := math.Abs(X[_jXn+k])
 						if absoluteValue >= big {
 							big = absoluteValue
 							iRow = j
 							iCol = k
+							iRowXn = iRow * n
+							iColXn = iCol * n
 						}
 					}
 				}
 			}
 		}
+
 		ipiV[iCol]++
+
 		if iRow != iCol {
 			for l := 0; l < n; l++ {
-				X[iRow*n+l], X[iCol*n+l] = X[iCol*n+l], X[iRow*n+l]
-			}
-			for l := 0; l < m; l++ {
-				b[iRow*n+l], b[iCol*n+l] = b[iCol*n+l], b[iRow*n+l]
+				x := iRowXn + l
+				y := iColXn + l
+				X[x], X[y] = X[y], X[x]
+				b[x], b[y] = b[y], b[x]
 			}
 		}
 		indexR[i] = iRow
 		indexC[i] = iCol
 
-		if X[iCol*n+iCol] == 0 {
+		_iColXnAddiCol := iColXn + iCol
+
+		if X[_iColXnAddiCol] == 0 {
 			return false
 		} // Singular
 
-		pivinv = 1 / X[iCol*n+iCol]
-		X[iCol*n+iCol] = 1
+		pivinv = 1 / X[_iColXnAddiCol]
+		X[_iColXnAddiCol] = 1
 		for l := 0; l < n; l++ {
-			X[iCol*n+l] *= pivinv
-		}
-		for l := 0; l < m; l++ {
-			b[iCol*n+l] *= pivinv
+			_a := iColXn + l
+			X[_a] *= pivinv
+			b[_a] *= pivinv
 		}
 
 		for ll := 0; ll < n; ll++ {
 			if ll != iCol {
-				dum = X[ll*n+iCol]
-				X[ll*n+iCol] = 0
+				_a := ll * n
+				_b := _a + iCol
+				dum = X[_b]
+				X[_b] = 0
 				for l := 0; l < n; l++ {
-					X[ll*n+l] -= X[iCol*n+l] * dum
-				}
-				for l := 0; l < m; l++ {
-					b[ll*n+l] -= b[iCol*n+l] * dum
+					_c := _a + l
+					_d := iColXn + l
+					X[_c] -= X[_d] * dum
+					b[_c] -= b[_d] * dum
 				}
 			}
 		}
@@ -206,7 +213,10 @@ func krigingMatrixSolve(X []float64, n int) bool {
 	for l := n - 1; l >= 0; l-- {
 		if indexR[l] != indexC[l] {
 			for k := 0; k < n; k++ {
-				X[k*n+indexR[l]], X[k*n+indexC[l]] = X[k*n+indexC[l]], X[k*n+indexR[l]]
+				_kXn := k * n
+				_a := _kXn + indexR[l]
+				_b := _kXn + indexC[l]
+				X[_a], X[_b] = X[_b], X[_a]
 			}
 		}
 	}

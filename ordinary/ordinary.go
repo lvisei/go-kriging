@@ -180,13 +180,15 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	var Xt = krigingMatrixTranspose(X, n, 2)
 	var Z = krigingMatrixMultiply(Xt, X, 2, n, 2)
 	Z = krigingMatrixAdd(Z, krigingMatrixDiag(float64(1)/alpha, 2), 2, 2)
-	var cloneZ = Z
+	var cloneZ = make([]float64, len(Z))
+	copy(cloneZ, Z)
 	if krigingMatrixChol(Z, 2) {
 		krigingMatrixChol2inv(Z, 2)
 	} else {
 		krigingMatrixSolve(cloneZ, 2)
 		Z = cloneZ
 	}
+
 	var W = krigingMatrixMultiply(krigingMatrixMultiply(Z, Xt, 2, 2, n), Y, 2, n, 1)
 
 	// Variogram parameters
@@ -215,7 +217,8 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 
 	// Inverse penalized Gram matrix projected to target vector
 	var C = krigingMatrixAdd(K, krigingMatrixDiag(sigma2, n), n, n)
-	var cloneC = C
+	var cloneC = make([]float64, len(C))
+	copy(cloneC, C)
 	if krigingMatrixChol(C, n) {
 		krigingMatrixChol2inv(C, n)
 	} else {
@@ -223,9 +226,9 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 		C = cloneC
 	}
 
-	// Copy unprojected inverted matrix as K
+	// Copy unprojected inverted matrix as K 复制未投影的逆矩阵为K
 	K = C
-	M := krigingMatrixMultiply(C, variogram.t, n, n, 1)
+	var M = krigingMatrixMultiply(C, variogram.t, n, n, 1)
 	variogram.K = K
 	variogram.M = M
 
