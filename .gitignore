@@ -16,8 +16,8 @@
 
 .idea
 
-temp/
+tempdata/
 .temp/
-testdata/
+data/
 
 internal/service

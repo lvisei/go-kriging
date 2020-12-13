@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+
 	"image/color"
 	"image/png"
 	"io/ioutil"
@@ -15,18 +16,21 @@ import (
 	"runtime/pprof"
 
 	"github.com/liuvigongzuoshi/go-kriging/canvas"
-	"github.com/liuvigongzuoshi/go-kriging/ordinary"
+	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
 	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
 )
 
-const dirPath = "testdata"
+const testDataDirPath = "testdata"
+const tempDataDirPath = "tempdata"
+const cpuProfileFilePath = tempDataDirPath + "/cpu_profile"
+const memProfileFilePath = tempDataDirPath + "/mem_profile"
 
 func main() {
-	cpuProfile, _ := os.Create("./testdata/cpu_profile")
+	cpuProfile, _ := os.Create(cpuProfileFilePath)
 	if err := pprof.StartCPUProfile(cpuProfile); err != nil {
 		log.Fatal(err)
 	}
-	//memProfile, _ := os.Create("./testdata/mem_profile")
+	//memProfile, _ := os.Create(memProfileFilePath)
 	//if err := pprof.WriteHeapProfile(memProfile); err != nil {
 	//	log.Fatal(err)
 	//}
@@ -36,19 +40,20 @@ func main() {
 		//memProfile.Close()
 	}()
 
-	data, err := readCsvFile("examples/csv/data/2045.csv")
+	data, err := readCsvFile("examples/csv/testdata/2045.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
-	polygon, err := readGeoJsonFile("examples/csv/data/yn.json")
+	polygon, err := readGeoJsonFile("examples/csv/testdata/yn.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer timeCost()("训练模型加插值总耗时")
+	defer timeCost()("训练模型与插值生成网格图片总耗时")
 
-	ordinaryKriging := ordinary.NewOrdinary(data["values"], data["x"], data["y"])
-	_ = ordinaryKriging.Train(ordinary.Spherical, 0, 100)
+	ordinaryKriging := ordinarykriging.NewOrdinary(data["values"], data["x"], data["y"])
+	_ = ordinaryKriging.Train(ordinarykriging.Spherical, 0, 100)
 
+	_ = polygon
 	gridPlot(ordinaryKriging, polygon)
 
 	//var wg sync.WaitGroup
@@ -61,18 +66,17 @@ func main() {
 	//	defer wg.Done()
 	//	contourRectanglePng(ordinaryKriging)
 	//}()
-
 	//wg.Wait()
 }
 
-func gridPlot(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoordinates) {
+func gridPlot(ordinaryKriging *ordinarykriging.Variogram, polygon ordinarykriging.PolygonCoordinates) {
 	defer timeCost()("插值生成网格图片耗时")
 	gridMatrices := ordinaryKriging.Grid(polygon, 0.01)
-	ctx := ordinaryKriging.Plot(gridMatrices, 500, 500, gridMatrices.Xlim, gridMatrices.Ylim, ordinary.DefaultGridLevelColor)
+	ctx := ordinaryKriging.Plot(gridMatrices, 500, 500, gridMatrices.Xlim, gridMatrices.Ylim, ordinarykriging.DefaultGridLevelColor)
 
 	subTitle := &canvas.TextConfig{
 		Text:     "球面半变异函数模型",
-		FontName: "testdata/fonts/source-han-sans-sc/regular.ttf",
+		FontName: testDataDirPath + "/fonts/source-han-sans-sc/regular.ttf",
 		FontSize: 28,
 		Color:    color.RGBA{R: 0, G: 0, B: 0, A: 255},
 		OffsetX:  252,
@@ -87,18 +91,18 @@ func gridPlot(ordinaryKriging *ordinary.Variogram, polygon ordinary.PolygonCoord
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		saveBuffer("grid.png", buffer)
+		saveBufferFile("grid.png", buffer)
 	}
 
 	//writeFile("gridMatrices.json", gridMatrices)
 }
 
-func contourRectanglePng(ordinaryKriging *ordinary.Variogram) {
+func contourRectanglePng(ordinaryKriging *ordinarykriging.Variogram) {
 	defer timeCost()("插值生成矩形图片耗时")
 	xWidth, yWidth := 800, 800
 	contourRectangle := ordinaryKriging.Contour(xWidth, yWidth)
-	pngPath := fmt.Sprintf("%v/%v.png", dirPath, time.Now().Format("2006-01-02 15:04:05"))
-	ctx := ordinaryKriging.PlotRectangleContour(contourRectangle, 500, 500, contourRectangle.Xlim, contourRectangle.Ylim, ordinary.DefaultLegendColor)
+	pngPath := fmt.Sprintf("%v/%v.png", tempDataDirPath, time.Now().Format("2006-01-02 15:04:05"))
+	ctx := ordinaryKriging.PlotRectangleContour(contourRectangle, 500, 500, contourRectangle.Xlim, contourRectangle.Ylim, ordinarykriging.DefaultLegendColor)
 	img := ordinaryKriging.PlotPng(contourRectangle)
 
 	err := os.MkdirAll(filepath.Dir(pngPath), os.ModePerm)
@@ -116,7 +120,7 @@ func contourRectanglePng(ordinaryKriging *ordinary.Variogram) {
 	if err != nil {
 		log.Fatal(err)
 	} else {
-		saveBuffer("rectangle.png", buffer)
+		saveBufferFile("rectangle.png", buffer)
 	}
 }
 
@@ -134,7 +138,7 @@ func readCsvFile(filePath string) (map[string][]float64, error) {
 
 	records, err := csv.NewReader(f).ReadAll()
 	if err != nil {
-		log.Fatal("Unable to parse file as CSV for "+filePath, err)
+		log.Fatal("Unable to parse file as CSV for\n "+filePath, err)
 		return nil, err
 	}
 
@@ -159,18 +163,18 @@ func readCsvFile(filePath string) (map[string][]float64, error) {
 	data := map[string][]float64{"values": values, "x": lons, "y": lats}
 
 	//fmt.Printf("values %#v\n lons %#v\n lats %#v\n", values, lons, lats)
-	// writeFile("data.json", data)
+	//writeFile("tempdata.json", tempdata)
 
 	return data, nil
 }
 
-func readGeoJsonFile(filePath string) (ordinary.PolygonCoordinates, error) {
+func readGeoJsonFile(filePath string) (ordinarykriging.PolygonCoordinates, error) {
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatal("Unable to read input file "+filePath, err)
+		log.Fatal("Unable to read input file \n"+filePath, err)
 		return nil, err
 	}
-	var polygonGeometry ordinary.PolygonGeometry
+	var polygonGeometry ordinarykriging.PolygonGeometry
 	err = json.Unmarshal(content, &polygonGeometry)
 	if err != nil {
 		log.Fatalf("invalid json: %v", err)
@@ -189,7 +193,7 @@ func timeCost() func(name string) {
 }
 
 func writeFile(fileName string, v interface{}) {
-	filePath := fmt.Sprintf("%v/%v %v", dirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
+	filePath := fmt.Sprintf("%v/%v %v", tempDataDirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
 	fmt.Printf("%#v\n", filePath)
 	// fmt.Printf("%#v\n", v)
 	content, err := json.Marshal(v)
@@ -199,8 +203,8 @@ func writeFile(fileName string, v interface{}) {
 	ioutil.WriteFile(filePath, content, os.ModePerm)
 }
 
-func saveBuffer(fileName string, content []byte) {
-	filePath := fmt.Sprintf("%v/%v %v", dirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
+func saveBufferFile(fileName string, content []byte) {
+	filePath := fmt.Sprintf("%v/%v %v", tempDataDirPath, time.Now().Format("2006-01-02 15-04-05"), fileName)
 	fmt.Printf("%#v\n", filePath)
 	ioutil.WriteFile(filePath, content, os.ModePerm)
 }
