@@ -5,6 +5,7 @@
 package ordinarykriging
 
 import (
+	"errors"
 	"github.com/liuvigongzuoshi/go-kriging/canvas"
 	"image"
 	"image/color"
@@ -62,7 +63,7 @@ func krigingVariogramSpherical(h, nugget, range_, sill, A float64) float64 {
 }
 
 // Train using gaussian processes with bayesian priors
-func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64) *Variogram {
+func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64) (*Variogram, error) {
 	variogram.Nugget = 0.0
 	variogram.Range = 0.0
 	variogram.Sill = 0.0
@@ -147,8 +148,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 			k = 0
 		}
 		if l < 2 {
-			// Error: Not enough points
-			return variogram
+			return nil, errors.New("not enough points")
 		}
 	}
 
@@ -232,7 +232,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	variogram.K = K
 	variogram.M = M
 
-	return variogram
+	return variogram, nil
 }
 
 // Predict model prediction

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
+	"log"
 )
 
 // tinygo build -o kriging.wasm -opt z -heap-size 2048M  -target wasm ./main.go
@@ -1832,12 +1833,17 @@ func OrdinaryKrigingFunc() int {
 
 func OrdinaryKriging(values, lons, lats []float64, model string, sigma2, alpha, width float64, polygon ordinarykriging.PolygonCoordinates) *ordinarykriging.GridMatrices {
 	ordinaryKriging := ordinarykriging.NewOrdinary(values, lons, lats)
-	_ = ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	if _, err := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha); err != nil {
+		log.Fatal(err)
+	}
 	return ordinaryKriging.Grid(polygon, width)
 }
 
 func OrdinaryKrigingTrain(values, lons, lats []float64, model string, sigma2 float64, alpha float64) *ordinarykriging.Variogram {
 	ordinaryKriging := ordinarykriging.NewOrdinary(values, lons, lats)
-	variogram := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	variogram, err := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return variogram
 }

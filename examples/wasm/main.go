@@ -85,13 +85,18 @@ func OrdinaryKrigingTrainFunc(this js.Value, args []js.Value) interface{} {
 
 func RunOrdinaryKrigingTrain(values, lons, lats []float64, model string, sigma2 float64, alpha float64) *ordinarykriging.Variogram {
 	ordinaryKriging := ordinarykriging.NewOrdinary(values, lons, lats)
-	variogram := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	variogram, err := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return variogram
 }
 
 func RunOrdinaryKriging(values, lons, lats []float64, model string, sigma2, alpha, width float64, polygon ordinarykriging.PolygonCoordinates) *ordinarykriging.GridMatrices {
 	ordinaryKriging := ordinarykriging.NewOrdinary(values, lons, lats)
-	_ = ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha)
+	if _, err := ordinaryKriging.Train(ordinarykriging.ModelType(model), sigma2, alpha); err != nil {
+		log.Fatal(err)
+	}
 	return ordinaryKriging.Grid(polygon, width)
 }
 

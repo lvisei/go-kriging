@@ -51,7 +51,9 @@ func main() {
 	defer timeCost()("训练模型与插值生成网格图片总耗时")
 
 	ordinaryKriging := ordinarykriging.NewOrdinary(data["values"], data["x"], data["y"])
-	_ = ordinaryKriging.Train(ordinarykriging.Spherical, 0, 100)
+	if _, err := ordinaryKriging.Train(ordinarykriging.Exponential, 0, 100); err != nil {
+		log.Fatal(err)
+	}
 
 	_ = polygon
 	gridPlot(ordinaryKriging, polygon)

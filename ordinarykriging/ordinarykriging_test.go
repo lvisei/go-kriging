@@ -36,6 +36,56 @@ func generateData(count int) (FloatList, FloatList, FloatList) {
 	return randomValues, randomLats, randomLons
 }
 
+func TestVariogram_Predict_100(t *testing.T) {
+	var randomValues, randomLats, randomLons FloatList
+	randomLons = append(randomLons, randFloats(-90, 90, 100)...)
+	randomLats = append(randomLats, randFloats(-180, 180, 100)...)
+	for _, lon := range randomLons {
+		var value float64
+		if lon > 0 {
+			value = 100
+		} else {
+			value = 0
+		}
+		randomValues = append(randomValues, value)
+	}
+	ordinaryKriging := ordinarykriging.NewOrdinary(randomValues, randomLats, randomLons)
+	if _, err := ordinaryKriging.Train(ordinarykriging.Exponential, 0, 10); err != nil {
+		t.Fatal("variogram is null", err)
+	}
+	if ordinaryKriging.Predict(180, 0) < 50 {
+		t.Fatal("unexpected result (<50)")
+	}
+	if ordinaryKriging.Predict(-180, 0) > 50 {
+		t.Fatal("unexpected result (>50)")
+	}
+}
+
+func TestVariogram_Predict_1000(t *testing.T) {
+	var randomValues, randomLats, randomLons FloatList
+	randomLons = append(randomLons, randFloats(-90, 90, 1000)...)
+	randomLats = append(randomLats, randFloats(-180, 180, 1000)...)
+	for _, lon := range randomLons {
+		var value float64
+		if lon > 0 {
+			value = 100
+		} else {
+			value = 0
+		}
+		randomValues = append(randomValues, value)
+	}
+	ordinaryKriging := ordinarykriging.NewOrdinary(randomValues, randomLats, randomLons)
+	if _, err := ordinaryKriging.Train(ordinarykriging.Exponential, 0, 10); err != nil {
+		t.Fatal("variogram is null", err)
+	}
+	if ordinaryKriging.Predict(180, 0) < 50 {
+		t.Fatal("unexpected result (<50)")
+	}
+	if ordinaryKriging.Predict(-180, 0) > 50 {
+		t.Fatal("unexpected result (>50)")
+	}
+}
+
 func TestVariogram_Plot(t *testing.T) {
 	ordinaryKriging := ordinarykriging.NewOrdinary(randomValues, randomLats, randomLons)
 	ordinaryKriging.Train(ordinarykriging.Exponential, 0, 100)
