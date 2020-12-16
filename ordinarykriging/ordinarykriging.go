@@ -227,7 +227,7 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	}
 
 	// Copy unprojected inverted matrix as K 复制未投影的逆矩阵为K
-	K = C
+	copy(K, C)
 	var M = matrixMultiply(C, variogram.t, n, n, 1)
 	variogram.K = K
 	variogram.M = M

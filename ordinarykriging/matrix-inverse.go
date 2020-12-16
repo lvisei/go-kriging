@@ -102,24 +102,14 @@ func gaussJordanInversion(X []float64, n int) bool {
 func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 	// eMat 返回 n 阶单位矩阵
 	var eMat = func(n int) ([][]float64, bool) {
-		/*
-		       返回n阶单位矩阵
-		   输入   :
-		       n       阶数
-		   输出   :
-		       sol     解值
-		       err     解出标志：false-未解出或达到步数上限；
-		                        true-全部解出
-		*/
 		sol := make([][]float64, n)
 		for i := 0; i < n; i++ {
 			sol[i] = make([]float64, n)
 		}
-		var err bool = false
 
-		//判断阶数
+		// 判断阶数
 		if n < 1 {
-			return nil, err
+			return nil, false
 		}
 
 		//分配元素
@@ -127,8 +117,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 			sol[i][i] = 1.0
 		}
 
-		err = true
-		return sol, err
+		return sol, true
 	}
 	// maxAbs 向量第一个绝对值最大值及其位置
 	var maxAbs = func(a []float64) (float64, int, bool) {
@@ -150,17 +139,18 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 		return sol, ii, err
 	}
 
-	var err bool = false
-	n := len(a)
-	temp0, _ := eMat(n)
-	b := temp0
-	sol := b
-	temp1 := make([]float64, n)
-
 	//判断是否方阵
 	if len(a) != len(a[0]) {
-		return sol, err
+		return nil, false
 	}
+
+	n := len(a)
+	sol, isOk := eMat(n)
+	if !isOk {
+		return nil, false
+	}
+
+	temp1 := make([]float64, n)
 
 	//主元消去
 	for i := 0; i < n; i++ {
@@ -174,9 +164,9 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 			temp1 = a[ii+i]
 			a[ii+i] = a[i]
 			a[i] = temp1
-			temp1 = b[ii+i]
-			b[ii+i] = b[i]
-			b[i] = temp1
+			temp1 = sol[ii+i]
+			sol[ii+i] = sol[i]
+			sol[i] = temp1
 		}
 
 		//列消去
@@ -184,7 +174,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 		mul := a[i][i]
 		for j := 0; j < n; j++ {
 			a[i][j] = a[i][j] / mul
-			b[i][j] = b[i][j] / mul
+			sol[i][j] = sol[i][j] / mul
 		}
 		//其它列置零
 		for j := 0; j < n; j++ {
@@ -192,15 +182,13 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 				mul = a[j][i] / a[i][i]
 				for k := 0; k < n; k++ {
 					a[j][k] = a[j][k] - a[i][k]*mul
-					b[j][k] = b[j][k] - b[i][k]*mul
+					sol[j][k] = sol[j][k] - sol[i][k]*mul
 				}
 			}
 		}
 	}
 
-	sol = b
-	err = true
-	return sol, err
+	return sol, true
 }
 
 func matrixInverseByCol_(x []float64, n int) ([]float64, bool) {
@@ -228,7 +216,7 @@ func matrixInverse(x []float64, n int) ([]float64, bool) {
 	// Take the inverse of a and place the result in ia.
 	err := ia.Inverse(a)
 	if err != nil {
-		return x, false
+		return ia.RawMatrix().Data, false
 	}
 
 	return ia.RawMatrix().Data, true
