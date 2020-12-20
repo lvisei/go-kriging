@@ -513,7 +513,7 @@ func (variogram *Variogram) Plot(gridMatrices *GridMatrices, width, height int, 
 
 // PlotRectangleGrid
 // 绘制矩形网格到数据 canvas 上
-func (variogram *Variogram) PlotRectangleContour(contourRectangle *ContourRectangle, width, height int, xlim, ylim [2]float64, colors []color.Color) *canvas.Canvas {
+func (variogram *Variogram) PlotRectangleGrid(contourRectangle *ContourRectangle, width, height int, xlim, ylim [2]float64, colors []color.Color) *canvas.Canvas {
 	// Create canvas
 	ctx := canvas.NewCanvas(width, height)
 	// Starting boundaries

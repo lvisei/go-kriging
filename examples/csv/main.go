@@ -104,7 +104,7 @@ func contourRectanglePng(ordinaryKriging *ordinarykriging.Variogram) {
 	xWidth, yWidth := 800, 800
 	contourRectangle := ordinaryKriging.Contour(xWidth, yWidth)
 	pngPath := fmt.Sprintf("%v/%v.png", tempDataDirPath, time.Now().Format("2006-01-02 15:04:05"))
-	ctx := ordinaryKriging.PlotRectangleContour(contourRectangle, 500, 500, contourRectangle.Xlim, contourRectangle.Ylim, ordinarykriging.DefaultLegendColor)
+	ctx := ordinaryKriging.PlotRectangleGrid(contourRectangle, 500, 500, contourRectangle.Xlim, contourRectangle.Ylim, ordinarykriging.DefaultLegendColor)
 	img := ordinaryKriging.PlotPng(contourRectangle)
 
 	err := os.MkdirAll(filepath.Dir(pngPath), os.ModePerm)
