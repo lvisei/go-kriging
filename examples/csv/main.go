@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"runtime/pprof"
-
 	"github.com/liuvigongzuoshi/go-kriging/canvas"
 	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
 	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
@@ -26,19 +24,19 @@ const cpuProfileFilePath = tempDataDirPath + "/cpu_profile"
 const memProfileFilePath = tempDataDirPath + "/mem_profile"
 
 func main() {
-	cpuProfile, _ := os.Create(cpuProfileFilePath)
-	if err := pprof.StartCPUProfile(cpuProfile); err != nil {
-		log.Fatal(err)
-	}
+	//cpuProfile, _ := os.Create(cpuProfileFilePath)
+	//if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+	//	log.Fatal(err)
+	//}
 	//memProfile, _ := os.Create(memProfileFilePath)
 	//if err := pprof.WriteHeapProfile(memProfile); err != nil {
 	//	log.Fatal(err)
 	//}
-	defer func() {
-		pprof.StopCPUProfile()
-		cpuProfile.Close()
+	//defer func() {
+		//pprof.StopCPUProfile()
+		//cpuProfile.Close()
 		//memProfile.Close()
-	}()
+	//}()
 
 	data, err := readCsvFile("examples/csv/testdata/2045.csv")
 	if err != nil {

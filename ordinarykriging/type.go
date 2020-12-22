@@ -55,11 +55,12 @@ func (t DistanceList) Swap(i, j int) {
 }
 
 type GridMatrices struct {
-	Data  [][]float64 `json:"data"`
-	Width float64     `json:"width"`
-	Xlim  [2]float64  `json:"xLim"`
-	Ylim  [2]float64  `json:"yLim"`
-	Zlim  [2]float64  `json:"zLim"`
+	Data        [][]float64 `json:"data"`
+	Width       float64     `json:"width"`
+	Xlim        [2]float64  `json:"xLim"`
+	Ylim        [2]float64  `json:"yLim"`
+	Zlim        [2]float64  `json:"zLim"`
+	NodataValue float64     `json:"nodataValue"`
 }
 
 type ContourRectangle struct {

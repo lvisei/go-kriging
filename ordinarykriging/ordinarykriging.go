@@ -266,6 +266,8 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 		return &GridMatrices{}
 	}
 
+	var nodataValue float64 = -9999
+
 	// Boundaries of polygon space
 	xlim := [2]float64{polygon[0][0][0], polygon[0][0][0]}
 	ylim := [2]float64{polygon[0][0][1], polygon[0][0][1]}
@@ -349,6 +351,8 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 				if pipFloat64(currentPolygon, xTarget, yTarget) {
 					wg.Add(1)
 					go parallelPredict(j, k, currentPolygon, xTarget, yTarget)
+				} else {
+					A[j][k] = nodataValue
 				}
 				//if pipFloat64(currentPolygon, xTarget, yTarget) {
 				//	A[j][k] = variogram.Predict(xTarget,
@@ -374,11 +378,12 @@ func (variogram *Variogram) Grid(polygon PolygonCoordinates, width float64) *Gri
 	}
 
 	gridMatrices := &GridMatrices{
-		Xlim:  xlim,
-		Ylim:  ylim,
-		Zlim:  [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)},
-		Width: width,
-		Data:  A,
+		Xlim:        xlim,
+		Ylim:        ylim,
+		Zlim:        [2]float64{minFloat64(variogram.t), maxFloat64(variogram.t)},
+		Width:       width,
+		Data:        A,
+		NodataValue: nodataValue,
 	}
 	return gridMatrices
 }
