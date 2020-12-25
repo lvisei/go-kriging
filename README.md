@@ -4,7 +4,7 @@
 
 Golang Multi-Goroutine spatial interpolation algorithm library for geospatial prediction and mapping via ordinary kriging.
 
-Based on [oeo4b/kriging.js](https://github.com/oeo4b/kriging.js)  refactoring and optimized the algorithm and added some new features. 
+Based on @oeo4b's [kriging.js](https://github.com/oeo4b/kriging.js) refactoring and optimized the algorithm and added some new features. 
 
 ## Fitting a Model
 
@@ -63,3 +63,8 @@ The variance parameter σ2 of the likelihood reflects the error in the gaussian 
 [kriging-wasm example](https://github.com/liuvigongzuoshi/kriging-wasm) - Test example used by wasm compiled with go-kriging algorithm code.
 
 [go-kriging-service](https://github.com/liuvigongzuoshi/go-kriging-service) - Call the REST service written by the go-kriging algorithm package, which supports concurrent calls by multiple users, and has a simple logging and fault-tolerant recovery mechanism.
+
+
+## License
+
+This package implement @oeo4b's kriging.js, a JavaScript library that is also [MIT-licensed](https://en.wikipedia.org/wiki/MIT_License).
