@@ -484,7 +484,7 @@ func (variogram *Variogram) Plot(gridMatrices *GridMatrices, width, height int, 
 
 	for i := 0; i < n; i++ {
 		for j := 0; j < m; j++ {
-			if gridMatrices.Data[i][j] == 0 {
+			if gridMatrices.Data[i][j] == gridMatrices.NodataValue {
 				continue
 			} else {
 				x := float64(width) * (float64(i)*gridMatrices.Width + gridMatrices.Xlim[0] - xlim[0]) / range_[0]
@@ -532,22 +532,18 @@ func (variogram *Variogram) PlotRectangleGrid(contourRectangle *ContourRectangle
 	for i := 0; i < m; i++ {
 		for j := 0; j < n; j++ {
 			index := i*n + j
-			if contourRectangle.Contour[index] == 0 {
-				continue
-			} else {
-				x := (float64(width) * (float64(j)*contourRectangle.XResolution + contourRectangle.Xlim[0] - xlim[0])) / range_[0]
-				y := float64(height) * (1 - (float64(i)*contourRectangle.YResolution+contourRectangle.Ylim[0]-ylim[0])/range_[1])
-				z := (contourRectangle.Contour[index] - contourRectangle.Zlim[0]) / range_[2]
-				if z < 0 {
-					z = 0.0
-				} else if z > 1 {
-					z = 1.0
-				}
-
-				colorIndex := int(math.Floor((float64(len(colors)) - 1) * z))
-				color := colors[colorIndex]
-				ctx.DrawRect(math.Round(x-wx/2), math.Round(y-wy/2), wx, wy, color)
+			x := (float64(width) * (float64(j)*contourRectangle.XResolution + contourRectangle.Xlim[0] - xlim[0])) / range_[0]
+			y := float64(height) * (1 - (float64(i)*contourRectangle.YResolution+contourRectangle.Ylim[0]-ylim[0])/range_[1])
+			z := (contourRectangle.Contour[index] - contourRectangle.Zlim[0]) / range_[2]
+			if z < 0 {
+				z = 0.0
+			} else if z > 1 {
+				z = 1.0
 			}
+
+			colorIndex := int(math.Floor((float64(len(colors)) - 1) * z))
+			color := colors[colorIndex]
+			ctx.DrawRect(math.Round(x-wx/2), math.Round(y-wy/2), wx, wy, color)
 		}
 	}
 
