@@ -6,6 +6,8 @@ Golang Multi-Goroutine spatial interpolation algorithm library for geospatial pr
 
 Based on @oeo4b's [kriging.js](https://github.com/oeo4b/kriging.js) refactoring and optimized the algorithm and added some new features. 
 
+![Examples](./docs/grid-exponential.png)
+
 ## Fitting a Model
 
 The train method with the new ordinaryKriging fits your input to whatever variogram model you specify - gaussian, exponential or spherical - and returns a variogram variable.
