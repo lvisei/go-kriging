@@ -6,7 +6,10 @@ Golang Multi-Goroutine spatial interpolation algorithm library for geospatial pr
 
 Based on @oeo4b's [kriging.js](https://github.com/oeo4b/kriging.js) refactoring and optimized the algorithm and added some new features. 
 
-![Examples](./docs/grid-exponential.png)
+<div align="center">
+<img src="https://raw.githubusercontent.com/liuvigongzuoshi/go-kriging/main/docs/grid-exponential.png" width="600">
+<p>This is exponential grid output png examples.</p>
+</div>
 
 ## Fitting a Model
 
