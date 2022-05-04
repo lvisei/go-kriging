@@ -46,16 +46,16 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-    - '^chore'
+    - '^chore:'
     - Merge pull request
     - Merge remote-tracking branch
     - Merge branch
   groups:
     - title: 'New Features'
-      regexp: "^.*feat[(\\w)]*:+.*$"
+      regexp: "^.*feat:+.*$"
       order: 0
     - title: 'Bug fixes'
-      regexp: "^.*fix[(\\w)]*:+.*$"
+      regexp: "^.*fix:+.*$"
       order: 10
     - title: Other
       order: 999
