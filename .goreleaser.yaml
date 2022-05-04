@@ -17,9 +17,9 @@ builds:
     - windows
     ldflags:
       - -s -w
-      - -X github.com/lvisei/go-kriging/ordinary-kriging-cli/main.version={{.Version}}
-      - -X github.com/lvisei/go-kriging/ordinary-kriging-cli/main.commit={{.ShortCommit}}
-      - -X github.com/lvisei/go-kriging/ordinary-kriging-cli/main.date={{.Date}}
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
 
 archives:
   - replacements:
