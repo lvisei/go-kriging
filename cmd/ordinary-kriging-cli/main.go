@@ -7,6 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	// these are set in build step
+	version = "unversioned"
+	//lint:ignore U1000 embedded by goreleaser
+	commit = "?"
+	//lint:ignore U1000 embedded by goreleaser
+	date = "?"
+)
+
 func main() {
 	execute()
 
