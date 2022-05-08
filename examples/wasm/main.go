@@ -1,3 +1,6 @@
+//go:build js
+// +build js
+
 package main
 
 import (
@@ -7,7 +10,7 @@ import (
 
 	"syscall/js"
 
-	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
+	"github.com/lvisei/go-kriging/ordinarykriging"
 )
 
 // GOOS=js GOARCH=wasm go build -o kriging.wasm

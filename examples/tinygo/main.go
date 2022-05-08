@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
 	"log"
+
+	"github.com/lvisei/go-kriging/ordinarykriging"
 )
 
 // tinygo build -o kriging.wasm -opt z -heap-size 2048M  -target wasm ./main.go

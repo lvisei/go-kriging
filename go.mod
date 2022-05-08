@@ -1,4 +1,4 @@
-module github.com/liuvigongzuoshi/go-kriging
+module github.com/lvisei/go-kriging
 
 go 1.15
 

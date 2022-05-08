@@ -1,0 +1,61 @@
+project_name: ordinary-kriging-cli
+
+env:
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/ordinary-kriging-cli
+    binary: ordinary-kriging-cli
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    goos:
+    - linux
+    - darwin
+    - windows
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - replacements:
+      darwin: darwin
+      linux: linux
+      windows: windows
+      amd64: x86_64
+    format_overrides:
+    - goos: windows
+      format: zip
+    files:
+      - LICENSE
+      - README.md
+
+release:
+  prerelease: auto
+  footer: |
+    **Full Changelog**: https://github.com/lvisei/go-kriging/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - '^chore:'
+    - Merge pull request
+    - Merge remote-tracking branch
+    - Merge branch
+  groups:
+    - title: 'New Features'
+      regexp: "^.*feat:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix:+.*$"
+      order: 10
+    - title: Other
+      order: 999
