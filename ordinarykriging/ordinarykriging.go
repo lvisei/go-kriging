@@ -6,12 +6,13 @@ package ordinarykriging
 
 import (
 	"errors"
-	"github.com/liuvigongzuoshi/go-kriging/canvas"
 	"image"
 	"image/color"
 	"math"
 	"sort"
 	"sync"
+
+	"github.com/lvisei/go-kriging/canvas"
 )
 
 // Variogram ordinary kriging variogram

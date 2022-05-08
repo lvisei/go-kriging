@@ -3,7 +3,7 @@ package ordinarykriging_test
 import (
 	"fmt"
 
-	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
+	"github.com/lvisei/go-kriging/ordinarykriging"
 )
 
 var (

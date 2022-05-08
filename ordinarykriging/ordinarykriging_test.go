@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
+	"github.com/lvisei/go-kriging/ordinarykriging"
 )
 
 const pngDirPath = "tempdata"

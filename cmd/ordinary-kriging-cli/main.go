@@ -25,7 +25,7 @@ var cmd = &cobra.Command{
 	Use:   "go-kriging",
 	Short: "geospatial prediction and mapping via ordinary kriging",
 	Long: `Golang library for geospatial prediction and mapping via ordinary kriging.
-			Complete documentation is available at https://github.com/liuvigongzuoshi/go-kriging`,
+			Complete documentation is available at https://github.com/lvisei/go-kriging`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Go Kriging Version: v0.1.0")
 		// TODO:

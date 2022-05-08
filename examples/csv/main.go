@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/liuvigongzuoshi/go-kriging/canvas"
-	"github.com/liuvigongzuoshi/go-kriging/ordinarykriging"
-	"github.com/liuvigongzuoshi/go-kriging/pkg/json"
+	"github.com/lvisei/go-kriging/canvas"
+	"github.com/lvisei/go-kriging/ordinarykriging"
+	"github.com/lvisei/go-kriging/pkg/json"
 )
 
 const testDataDirPath = "testdata"
@@ -33,9 +33,9 @@ func main() {
 	//	log.Fatal(err)
 	//}
 	//defer func() {
-		//pprof.StopCPUProfile()
-		//cpuProfile.Close()
-		//memProfile.Close()
+	//pprof.StopCPUProfile()
+	//cpuProfile.Close()
+	//memProfile.Close()
 	//}()
 
 	data, err := readCsvFile("examples/csv/testdata/2045.csv")
