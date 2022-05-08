@@ -150,7 +150,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 		return nil, false
 	}
 
-	//lint:ignore SA4006 for temp
+	//lint:ignore SA4006
 	temp1 := make([]float64, n)
 
 	//主元消去

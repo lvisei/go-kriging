@@ -1,3 +1,4 @@
+//lint:file-ignore SA4003
 package main
 
 import (
