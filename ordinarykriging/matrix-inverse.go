@@ -1,8 +1,9 @@
 package ordinarykriging
 
 import (
-	"gonum.org/v1/gonum/mat"
 	"math"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // gaussJordanInversion inversion via gauss-jordan elimination
@@ -150,7 +151,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 		return nil, false
 	}
 
-	//lint:ignore SA4006
+	//lint:ignore SA4006 for temp
 	temp1 := make([]float64, n)
 
 	//主元消去
