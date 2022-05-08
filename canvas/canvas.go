@@ -52,7 +52,7 @@ func NewCanvasWithImage(background image.Image) *Canvas {
 	return canvas
 }
 
-// NewCanvasWithLocal 从本地图片创建新的画布
+// NewCanvasWithLocalImagePath 从本地图片创建新的画布
 func NewCanvasWithLocalImagePath(imagePath string) (*Canvas, error) {
 	img, err := LoadLocalImage(imagePath)
 	if err != nil {
@@ -129,7 +129,7 @@ func (canvas *Canvas) Output() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// SavePNG
+// SavePNG 保存 PNG 图片
 func (canvas *Canvas) SavePNG(path string) error {
 	if err := canvas.context.SavePNG(path); err != nil {
 		return err

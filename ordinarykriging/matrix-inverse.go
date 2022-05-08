@@ -123,7 +123,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 	var maxAbs = func(a []float64) (float64, int, bool) {
 		var sol float64
 		var ii int
-		var err bool = false
+		var err = false
 
 		n := len(a)
 		ii = 0
@@ -150,7 +150,7 @@ func matrixInverseByCol(a [][]float64) ([][]float64, bool) {
 		return nil, false
 	}
 
-	// lint:ignore SA4006
+	// lint:ignore SA4006 for temp
 	temp1 := make([]float64, n)
 
 	//主元消去

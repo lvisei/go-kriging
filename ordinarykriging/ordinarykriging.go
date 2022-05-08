@@ -510,7 +510,7 @@ func (variogram *Variogram) Plot(gridMatrices *GridMatrices, width, height int, 
 	return ctx
 }
 
-// PlotRectangleGrid
+// PlotRectangleGrid plot to canvas
 // 绘制矩形网格到数据 canvas 上
 func (variogram *Variogram) PlotRectangleGrid(contourRectangle *ContourRectangle, width, height int, xlim, ylim [2]float64, colors []color.Color) *canvas.Canvas {
 	// Create canvas
@@ -544,7 +544,7 @@ func (variogram *Variogram) PlotRectangleGrid(contourRectangle *ContourRectangle
 	return ctx
 }
 
-// PlotPng
+// PlotPng plot to png
 func (variogram *Variogram) PlotPng(rectangleGrids *ContourRectangle) *image.RGBA {
 	contour := rectangleGrids.Contour
 	xWidth := rectangleGrids.XWidth
