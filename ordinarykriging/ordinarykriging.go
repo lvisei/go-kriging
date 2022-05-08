@@ -74,21 +74,17 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 	switch model {
 	case Gaussian:
 		variogram.model = krigingVariogramGaussian
-		break
 	case Exponential:
 		variogram.model = krigingVariogramExponential
-		break
 	case Spherical:
 		variogram.model = krigingVariogramSpherical
-		break
 	}
 
 	// Lag distance/semivariance
 	var i, j, k, l, n int
 	n = len(variogram.t)
 
-	var distance DistanceList
-	distance = make([][2]float64, (n*n-n)/2)
+	var distance DistanceList = make([][2]float64, (n*n-n)/2)
 
 	i = 0
 	k = 0
@@ -166,13 +162,10 @@ func (variogram *Variogram) Train(model ModelType, sigma2 float64, alpha float64
 		switch model {
 		case Gaussian:
 			X[i*2+1] = 1.0 - exp(-(1.0/A)*pow2(lag[i]/variogram.Range))
-			break
 		case Exponential:
 			X[i*2+1] = 1.0 - exp(-(1.0/A)*lag[i]/variogram.Range)
-			break
 		case Spherical:
 			X[i*2+1] = 1.5*(lag[i]/variogram.Range) - 0.5*pow3(lag[i]/variogram.Range)
-			break
 		}
 		Y[i] = semi[i]
 	}
