@@ -16,11 +16,6 @@ var (
 	date = "?"
 )
 
-func main() {
-	execute()
-
-}
-
 var cmd = &cobra.Command{
 	Use:   "go-kriging",
 	Short: "geospatial prediction and mapping via ordinary kriging",
@@ -37,4 +32,8 @@ func execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func main() {
+	execute()
 }
